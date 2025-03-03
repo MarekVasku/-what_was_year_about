@@ -1,0 +1,12 @@
+[project]
+name = "what_was_year_about"
+version = "0.1.0"
+dependencies = [
+    "nicegui",
+    "gspread",
+    "pandas",
+]
+
+[build-system]
+requires = ["uv"]
+build-backend = "uv"
