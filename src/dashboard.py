@@ -1,6 +1,110 @@
+from data_utils import get_data_cached
+from llm_implementation import get_user_voting_insight
+from visuals import (
+    make_podium_chart,
+    make_top_10_spotlight,
+    make_main_chart,
+    make_distribution_chart,
+    make_all_votes_distribution,
+)
+import pandas as pd
+
+
+def create_dashboard(user_email_prefix: str = ""):
+    """Generate all dashboard components with optional user comparison."""
+    df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, error, comparison = get_data_cached(user_email_prefix)
+    
+    if error:
+        return (
+            f"### ⚠️ Error Loading Data\n```\n{error}\n```",
+            make_podium_chart(pd.DataFrame()), make_top_10_spotlight(pd.DataFrame()),
+            make_distribution_chart(pd.DataFrame()), make_all_votes_distribution(pd.DataFrame()),
+            make_main_chart(pd.DataFrame()), pd.DataFrame(), pd.DataFrame(),
+        )
+    
+    if avg_scores.empty:
+        return (
+            "### 📊 No Data Yet\nClick refresh to load voting results.",
+            make_podium_chart(pd.DataFrame()), make_top_10_spotlight(pd.DataFrame()),
+            make_distribution_chart(pd.DataFrame()), make_all_votes_distribution(pd.DataFrame()),
+            make_main_chart(pd.DataFrame()), pd.DataFrame(),
+        )
+    
+    # --- Overview respecting ties and listing all tied songs ---
+    top1 = avg_scores[avg_scores['Rank'] == 1]
+    top2 = avg_scores[avg_scores['Rank'] == 2]
+    top3 = avg_scores[avg_scores['Rank'] == 3]
+
+    def place_line(place_df, medal):
+        if place_df.empty:
+            return f"{medal} —"
+        items = [
+            f"{row['Song']} ({row['Average Score']:.2f})"
+            for _, row in place_df.iterrows()
+        ]
+        return f"{medal} " + " • ".join(items)
+
+    # Winner display (all rank-1 songs listed)
+    if not top1.empty:
+        winners = " | ".join([f"{row['Song']}" for _, row in top1.iterrows()])
+        winner_display = f"{winners} — **{top1.iloc[0]['Average Score']:.2f}**"
+    else:
+        winner_display = "—"
+
+    top3_line = "  •  ".join([
+        place_line(top1, "🥇"),
+        place_line(top2, "🥈"),
+        place_line(top3, "🥉"),
+    ])
+
+
+    overview = f"""### Winner
+{winner_display}
+
+Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs:.2f}
+
+### Top 3
+{top3_line}
+"""
+    
+    # Generate charts
+    podium_chart = make_podium_chart(avg_scores)
+    top10_chart = make_top_10_spotlight(avg_scores)
+    main_chart = make_main_chart(avg_scores, comparison if comparison is not None else None)
+    dist_chart = make_distribution_chart(avg_scores)
+    all_votes_chart = make_all_votes_distribution(df_raw)
+    
+    # All songs table (rounded to 2 decimals)
+    all_songs_table = avg_scores[['Rank', 'Song', 'Average Score']].copy()
+    all_songs_table['Average Score'] = all_songs_table['Average Score'].round(2)
+    
+    # User comparison section and LLM insight
+    user_comparison = comparison
+    if comparison is not None and not comparison.empty:
+        comparison_display = comparison.round(2)
+        # Get LLM insight about voting patterns
+        insight = get_user_voting_insight(comparison)
+        if insight:
+            overview = overview + f"\n\n### 🎯 Your Voting Pattern\n{insight}"
+    else:
+        comparison_display = pd.DataFrame()
+    
+    return (
+        overview,
+        podium_chart,
+        top10_chart,
+        dist_chart,
+        all_votes_chart,
+        main_chart,
+        all_songs_table,
+        comparison_display
+    )
 import pandas as pd
 import plotly.express as px
 from nicegui import ui
+
+# Playing around and experimenting with the NiceGUI framework
+
 
 def show_dashboard(df):
     # Identify song columns (skip first columns like timestamp & email)
