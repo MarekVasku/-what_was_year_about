@@ -15,14 +15,16 @@ def fetch_df() -> pd.DataFrame:
     sh = gc.open(SPREADSHEET_NAME).sheet1
     return pd.DataFrame(sh.get_all_records())
 
-def get_top_song(df: pd.DataFrame, meta_cols: int = 2):
+def get_top_song(df: pd.DataFrame, meta_cols: int = 2) -> tuple[str, float]:
     # assumes first 2 columns are metadata (Timestamp, Email); ratings follow
     song_cols = list(df.columns[meta_cols:])
     ratings = df[song_cols].apply(pd.to_numeric, errors="coerce")
     means = ratings.mean(skipna=True).dropna()
     if means.empty:
         raise ValueError("No numeric ratings found in the sheet.")
-    return means.idxmax(), float(means.max())
+    top_song = str(means.idxmax())
+    top_score = float(means.max())
+    return top_song, top_score
 
 def make_prompt(song: str, avg: float) -> str:
     return f"Write one short sentence: The favourite song was {song} with an average rating of {avg:.2f}, then one more sentence about that musical taste jokingly"
@@ -72,17 +74,21 @@ Tone guide: Think "your music-obsessed friend who loves to playfully debate tast
     return call_groq(prompt)
 
 def call_groq(prompt: str) -> str:
-    from groq import Groq
-    client = Groq(api_key=GROQ_API_KEY)
-    resp = client.chat.completions.create(
-        model=GROQ_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        max_tokens=500,
-        top_p=1,
-        stop=None
-    )
-    return resp.choices[0].message.content.strip()
+    try:
+        from groq import Groq
+        client = Groq(api_key=GROQ_API_KEY)
+        resp = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=500,
+            top_p=1,
+            stop=None
+        )
+        content = resp.choices[0].message.content
+        return content.strip() if content else "No response generated"
+    except Exception as e:
+        return f"Error generating response: {str(e)}"
 
 def get_user_voting_insight(comparison_df: pd.DataFrame) -> str:
     """Get an LLM-generated insight about how this user's votes compare to the group."""

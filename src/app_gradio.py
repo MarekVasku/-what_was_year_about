@@ -1,14 +1,15 @@
 import gradio as gr
+from gradio import themes
 from dashboard import create_dashboard
 from data_utils import refresh_data
 
 
 # ---------- Gradio UI (UI-only, imports functionality from modules) ----------
-theme = gr.themes.Soft(
+theme = themes.Soft(
     primary_hue="blue",
     secondary_hue="indigo",
     neutral_hue="slate",
-    font=gr.themes.GoogleFont("Inter"),
+    font=themes.GoogleFont("Inter"),
 ).set(
     body_background_fill="*neutral_50",
     block_title_text_weight="600",
@@ -31,10 +32,26 @@ CUSTOM_CSS = """
 
 with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS) as demo:
     
-    # Hero section
+    # Hero section with optional image
     with gr.Column(elem_classes=["hero"]):
+        gr.Image("/Users/macbok/Documents/Projects/-what_was_year_about/static/header.png", show_label=False, height=300)
+        
         gr.Markdown("# What Was 2024 About")
         gr.Markdown("_Some people's definitive ranking of the best alternative songs_")
+        
+        # Spotify Playlist Embed
+        gr.HTML("""
+            <iframe data-testid="embed-iframe" style="border-radius:12px; margin: 1rem auto; display: block;" 
+                    src="https://open.spotify.com/embed/playlist/5LplruxClPSYiAUjANLodn?utm_source=generator" 
+                    width="100%" 
+                    height="352" 
+                    frameBorder="0" 
+                    allowfullscreen="" 
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                    loading="lazy">
+            </iframe>
+        """)
+        
         with gr.Row():
             email_input = gr.Textbox(
                 label="Your Email Prefix",
@@ -84,32 +101,97 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
                 wrap=True
             )
     
+    # New user-specific visualizations (only shown when user email is provided)
+    gr.Markdown("## 🎭 Your Personal Music Analysis")
+    
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("### Biggest Disagreements")
+            disagreements_plot = gr.Plot()
+        with gr.Column(scale=1):
+            gr.Markdown("### Your Top 10 vs Community")
+            user_vs_top10_plot = gr.Plot()
+    
+    gr.Markdown("### Your Rating Pattern")
+    rating_pattern_plot = gr.Plot()
+    
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("### 👥 Your Taste Twins (Chart)")
+            similarity_plot = gr.Plot()
+        with gr.Column(scale=1):
+            gr.Markdown("### 👥 Taste Similarity Details")
+            similarity_table = gr.Dataframe(
+                headers=["Voter", "Similarity Score", "Songs in Common"],
+                interactive=False,
+                wrap=True
+            )
+    
+    gr.Markdown("## 📊 Community Insights")
+    
+    gr.Markdown("### All Votes Heatmap")
+    heatmap_plot = gr.Plot()
+    
+    gr.Markdown("### Most Polarizing Songs")
+    controversy_plot = gr.Plot()
+    
+    gr.Markdown("## 🧬 Clustering Analysis")
+    
+    gr.Markdown("### 2D Taste Map: Explore the Music Taste Landscape")
+    gr.Markdown("_Nearby points have similar taste. Hover over points to see voter names._")
+    taste_map_plot = gr.Plot()
+    
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("### Song Clusters")
+            gr.Markdown("_Songs grouped by similar voting patterns_")
+            song_clustering_plot = gr.Plot()
+        with gr.Column(scale=1):
+            gr.Markdown("### Voter Archetypes")
+            gr.Markdown("_Voter groups with similar taste profiles_")
+            voter_clustering_plot = gr.Plot()
+    
+    gr.Markdown("### Voter Cluster Details")
+    voter_clusters_table = gr.Dataframe(
+        headers=["Voter", "Cluster", "Cluster_Name"],
+        interactive=False,
+        wrap=True
+    )
+    
     def refresh_with_email(email_prefix):
         """Wrapper to pass email to refresh_data."""
         return create_dashboard(email_prefix)
     
     # Wire up refresh with email
+    all_outputs = [
+        overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot, 
+        all_songs_table, user_comparison,
+        disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, 
+        rating_pattern_plot, similarity_plot, similarity_table,
+        taste_map_plot, song_clustering_plot, voter_clustering_plot, voter_clusters_table
+    ]
+    
     refresh_btn.click(
         refresh_with_email,
-        inputs=[email_input],  # Pass the email input
-        outputs=[overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot, all_songs_table, user_comparison],
+        inputs=[email_input],
+        outputs=all_outputs,
     )
     
     # Email input triggers refresh too
     email_input.submit(
         refresh_with_email,
-        inputs=[email_input],  # Pass the email input
-        outputs=[overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot, all_songs_table, user_comparison],
+        inputs=[email_input],
+        outputs=all_outputs,
     )
     
     # Initial load with empty email
     demo.load(
-        lambda: create_dashboard(""),  # Start with empty email
+        lambda: create_dashboard(""),
         inputs=None,
-        outputs=[overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot, all_songs_table, user_comparison],
+        outputs=all_outputs,
     )
 
 
 if __name__ == "__main__":
 
-    demo.launch(share=True)  # Set share=True for public link
+    demo.launch(share=False)  # Set share=True for public link

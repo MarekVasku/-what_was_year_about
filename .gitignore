@@ -4,3 +4,16 @@ credentials.json
 __pycache__/
 *.pyc
 *.pyo
+
+# macOS system file
+.DS_Store
+
+# Local Gradio config & SSL certs
+.gradio/
+*.pem
+
+# Lock & build files
+uv.lock
+
+# VS Code settings
+.vscode/
