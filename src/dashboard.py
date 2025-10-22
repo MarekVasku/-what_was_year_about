@@ -10,6 +10,7 @@ from visuals import (
     make_user_vs_community_top10,
     make_voting_heatmap,
     make_controversy_chart,
+    make_most_agreeable_chart,
     make_user_rating_pattern,
     make_taste_similarity_chart,
     make_2d_taste_map_chart,
@@ -29,8 +30,8 @@ def create_dashboard(user_email_prefix: str = ""):
             f"### ⚠️ Error Loading Data\n```\n{error}\n```",
             empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, 
             pd.DataFrame(), pd.DataFrame(),
-            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, pd.DataFrame(),
-            empty_fig, empty_fig, empty_fig, pd.DataFrame(),
+            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
+            empty_fig,
         )
     
     if avg_scores.empty:
@@ -39,8 +40,8 @@ def create_dashboard(user_email_prefix: str = ""):
             "### 📊 No Data Yet\nClick refresh to load voting results.",
             empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
             pd.DataFrame(), pd.DataFrame(),
-            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, pd.DataFrame(),
-            empty_fig, empty_fig, empty_fig, pd.DataFrame(),
+            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
+            empty_fig,
         )
     
     # --- Overview respecting ties and listing all tied songs ---
@@ -60,7 +61,7 @@ def create_dashboard(user_email_prefix: str = ""):
     # Winner display (all rank-1 songs listed)
     if not top1.empty:
         winners = " | ".join([f"{row['Song']}" for _, row in top1.iterrows()])
-        winner_display = f"{winners} — **{top1.iloc[0]['Average Score']:.2f}**"
+        winner_display = f"{winners} — {top1.iloc[0]['Average Score']:.2f}"
     else:
         winner_display = "—"
 
@@ -87,25 +88,20 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
     dist_chart = make_distribution_chart(avg_scores)
     all_votes_chart = make_all_votes_distribution(df_raw)
     
-    # All songs table (rounded to 2 decimals)
-    all_songs_table = avg_scores[['Rank', 'Song', 'Average Score']].copy()
+    # All songs table (rounded to 2 decimals, exclude songs with no votes)
+    all_songs_table = avg_scores[avg_scores['Average Score'] > 0][['Rank', 'Song', 'Average Score']].copy()
     all_songs_table['Average Score'] = all_songs_table['Average Score'].round(2)
     
     # User-specific visualizations
     disagreements_chart = make_podium_chart(pd.DataFrame())  # empty default
     user_vs_top10_chart = make_podium_chart(pd.DataFrame())
-    heatmap_chart = make_voting_heatmap(df_raw)
+    heatmap_chart = make_voting_heatmap(df_raw, user_email_prefix)
     controversy_chart = make_controversy_chart(df_raw, avg_scores)
+    agreeable_chart = make_most_agreeable_chart(df_raw, avg_scores)
     rating_pattern_chart = make_podium_chart(pd.DataFrame())
-    similarity_chart = make_podium_chart(pd.DataFrame())
-    similarity_table = pd.DataFrame()
     
     # Clustering visualizations
     taste_map_chart = make_2d_taste_map_chart(create_2d_taste_map(df_raw, user_email_prefix))
-    song_clusters_df, _ = cluster_songs(df_raw, n_clusters=5)
-    song_clustering_chart = make_song_clustering_chart(song_clusters_df, avg_scores)
-    voter_clusters_df = cluster_voters(df_raw, n_clusters=4)
-    voter_clustering_chart = make_voter_clustering_chart(voter_clusters_df)
     
     # User comparison section and LLM insight
     user_comparison = comparison
@@ -120,13 +116,6 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         disagreements_chart = make_biggest_disagreements_chart(comparison)
         user_vs_top10_chart = make_user_vs_community_top10(comparison, avg_scores)
         rating_pattern_chart = make_user_rating_pattern(comparison, df_raw)
-        
-        # Calculate taste similarity
-        if user_email_prefix and df_raw is not None:
-            similarity_df = calculate_taste_similarity(df_raw, user_email_prefix)
-            if not similarity_df.empty:
-                similarity_chart = make_taste_similarity_chart(similarity_df)
-                similarity_table = similarity_df[['Voter', 'Similarity Score', 'Songs in Common']].round(2)
     else:
         comparison_display = pd.DataFrame()
     
@@ -143,13 +132,9 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         user_vs_top10_chart,
         heatmap_chart,
         controversy_chart,
+        agreeable_chart,
         rating_pattern_chart,
-        similarity_chart,
-        similarity_table,
         taste_map_chart,
-        song_clustering_chart,
-        voter_clustering_chart,
-        voter_clusters_df,
     )
 import pandas as pd
 import plotly.express as px

@@ -58,7 +58,7 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
                 placeholder="e.g., maravasku (without @gmail.com)",
                 show_label=True
             )
-            refresh_btn = gr.Button("Refresh Data", variant="primary", size="sm")
+            refresh_btn = gr.Button("Refresh Data 🔄", variant="primary")
     
     # Overview section (compact summary, no charts)
     with gr.Column(elem_classes=["overview-box"]):
@@ -115,48 +115,23 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
     gr.Markdown("### Your Rating Pattern")
     rating_pattern_plot = gr.Plot()
     
-    with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("### 👥 Your Taste Twins (Chart)")
-            similarity_plot = gr.Plot()
-        with gr.Column(scale=1):
-            gr.Markdown("### 👥 Taste Similarity Details")
-            similarity_table = gr.Dataframe(
-                headers=["Voter", "Similarity Score", "Songs in Common"],
-                interactive=False,
-                wrap=True
-            )
-    
     gr.Markdown("## 📊 Community Insights")
     
     gr.Markdown("### All Votes Heatmap")
+    gr.Markdown("_Voters are anonymized except you_")
     heatmap_plot = gr.Plot()
     
-    gr.Markdown("### Most Polarizing Songs")
+    gr.Markdown("### Most Polarizing Songs (Top 10)")
     controversy_plot = gr.Plot()
+    
+    gr.Markdown("### Most Agreeable Songs (Top 10)")
+    agreeable_plot = gr.Plot()
     
     gr.Markdown("## 🧬 Clustering Analysis")
     
-    gr.Markdown("### 2D Taste Map: Explore the Music Taste Landscape")
-    gr.Markdown("_Nearby points have similar taste. Hover over points to see voter names._")
+    gr.Markdown("### 2D Taste Map")
+    gr.Markdown("_Explore music taste similarities (anonymized)_")
     taste_map_plot = gr.Plot()
-    
-    with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("### Song Clusters")
-            gr.Markdown("_Songs grouped by similar voting patterns_")
-            song_clustering_plot = gr.Plot()
-        with gr.Column(scale=1):
-            gr.Markdown("### Voter Archetypes")
-            gr.Markdown("_Voter groups with similar taste profiles_")
-            voter_clustering_plot = gr.Plot()
-    
-    gr.Markdown("### Voter Cluster Details")
-    voter_clusters_table = gr.Dataframe(
-        headers=["Voter", "Cluster", "Cluster_Name"],
-        interactive=False,
-        wrap=True
-    )
     
     def refresh_with_email(email_prefix):
         """Wrapper to pass email to refresh_data."""
@@ -166,9 +141,9 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
     all_outputs = [
         overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot, 
         all_songs_table, user_comparison,
-        disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, 
-        rating_pattern_plot, similarity_plot, similarity_table,
-        taste_map_plot, song_clustering_plot, voter_clustering_plot, voter_clusters_table
+        disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, agreeable_plot,
+        rating_pattern_plot,
+        taste_map_plot
     ]
     
     refresh_btn.click(
