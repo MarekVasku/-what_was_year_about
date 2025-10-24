@@ -1,0 +1,8 @@
+nicegui
+gspread
+pandas
+gradio
+plotly
+groq
+scikit-learn
+numpy>=2.3.4
