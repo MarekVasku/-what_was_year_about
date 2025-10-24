@@ -38,9 +38,11 @@ DONE
 
 7. Timeline of Votes (if timestamps available)
 Show when votes came in, which songs got rated first/last
+Not applicable
 
 8. Genre/Artist Clustering (if you have metadata)
 Show which types of songs the user rates higher/lower than average
+Not applicable
 
 My Top Recommendations:
 Biggest Disagreements Chart - Quick, impactful, fun to discuss

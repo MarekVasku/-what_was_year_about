@@ -135,7 +135,7 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         if insight:
             # Plain-size label, plus model info note
             overview = overview + (
-                f"\n\n**Your Voting Pattern**\n{insight}\n"
+                f"\n\n**Your Voting Pattern (LLM-generated):**\n{insight}\n"
                 f"\n<span class='model-note'>Generated with <code>{MODEL_ANALYSIS}</code> on Groq</span>"
             )
         
