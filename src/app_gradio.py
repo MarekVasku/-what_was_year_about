@@ -37,8 +37,8 @@ CUSTOM_CSS = """
     .overview-box strong, .overview-box em, .overview-box b, .overview-box i,
     .overview-box span, .overview-box li, .overview-box a { color: #111827 !important; }
     /* Tiny model info note */
-    .model-note { font-size: 0.75rem !important; color: #6b7280 !important; display: block; text-align: center !important; margin-top: -5px !important; }
-    .overview-box .model-note { color: #6b7280 !important; }
+    .model-note { font-size: 0.85rem !important; color: #1e3a8a !important; display: block; text-align: center !important; margin-top: -5px !important; }
+    .overview-box .model-note { color: #1e3a8a !important; }
     .stats-line {font-size: 1rem !important; color: #6b7280 !important; margin: 0.5rem 0 !important;}
 """
 
