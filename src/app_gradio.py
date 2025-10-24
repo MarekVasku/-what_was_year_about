@@ -63,14 +63,14 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             </div>
         """)
         gr.Markdown("""
-<p style='font-size: 11px; color: #0f172a; text-align: center; margin-top: -5px;'>
+<p style='font-size: 11px; color: #0f172a !important; text-align: center; margin-top: -5px;'>
 Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Veneficium by Xiu Xiu) were removed from Spotify by artists protesting Spotify's policies
                      about their investment in drones/military investments. 
                     Also F*ck ICE just for the sake.
 </p>
 """)
         gr.Markdown(
-            "<p style='font-size: 0.95rem; color: #ffffff; text-align: center; margin: 0.5rem 0 0.25rem;'>"
+            "<p style='font-size: 0.95rem; color: #ffffff !important; text-align: center; margin: 0.5rem 0 0.25rem;'>"
             "Please enter the same email prefix you used in the survey (before the @). This unlocks your personal insights."
             "</p>"
         )
