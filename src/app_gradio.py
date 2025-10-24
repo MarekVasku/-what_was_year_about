@@ -67,7 +67,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             </div>
         """)
         gr.Markdown("""
-<p style='font-size: 11px; color: #0f172a !important; text-align: center; margin-top: -5px;'>
+<p style='font-size: 0.75rem !important; color: #6b7280 !important; text-align: center; margin-top: -5px;'>
 Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Veneficium by Xiu Xiu) were removed from Spotify by artists protesting Spotify's policies
                      about their investment in drones/military investments. 
                     Also F*ck ICE just for the sake.
