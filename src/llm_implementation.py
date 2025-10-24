@@ -1,6 +1,6 @@
 import os
+
 import pandas as pd
-from typing import Optional
 
 SPREADSHEET_NAME = "What was 2024 about - responses"
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -44,29 +44,29 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
     """Analyze how a user's votes differ from the average and generate a summary."""
     if comparison_df.empty:
         return ""
-    
+
     # Sort by absolute difference to find most significant disagreements
     comparison_df = comparison_df.copy()
     comparison_df['Abs_Diff'] = abs(comparison_df['Difference'])
     significant_diffs = comparison_df.nlargest(3, 'Abs_Diff')
-    
+
     # Find their top rated songs vs overall top rated
     user_top = comparison_df.nlargest(3, 'Your Score')
     overall_top = comparison_df.nlargest(3, 'Average Score')
-    
+
     # Find general voting pattern
     avg_difference = comparison_df['Difference'].mean()
     higher_count = (comparison_df['Difference'] > 1).sum()
     lower_count = (comparison_df['Difference'] < -1).sum()
-    
+
     # Create prompt for LLM
     # Find biggest positive and negative differences
     biggest_over = significant_diffs[significant_diffs['Difference'] > 0].iloc[0] if not significant_diffs[significant_diffs['Difference'] > 0].empty else None
     biggest_under = significant_diffs[significant_diffs['Difference'] < 0].iloc[0] if not significant_diffs[significant_diffs['Difference'] < 0].empty else None
-    
+
     over_text = f"You're absolutely swooning over '{biggest_over['Song']}' with a {biggest_over['Your Score']:.1f} (while everyone else gave it a modest {biggest_over['Average Score']:.1f})" if biggest_over is not None else ""
     under_text = f"and giving '{biggest_under['Song']}' a {biggest_under['Your Score']:.1f} (compared to the crowd's love at {biggest_under['Average Score']:.1f})" if biggest_under is not None else ""
-    
+
     prompt = f"""Write a friendly, conversational analysis that directly addresses the voter (use 'you' and 'your'). Keep it grounded and observational about preferences and results. Aim for 250–300 words.
 
 Tone constraints (important):
@@ -86,12 +86,12 @@ Key points to hit with some gentle snark:
 - You rated {higher_count} songs higher and {lower_count} songs lower than the crowd - interesting pattern there!
 
 Tone guide: Think "your music-obsessed friend who loves to playfully debate taste but ultimately celebrates your unique preferences". Mix gentle teasing with genuine appreciation for their bold choices. Throw in some music-nerd references if they fit."""
-    
+
     for _, row in significant_diffs.iterrows():
         diff = row['Difference']
         direction = 'higher' if diff > 0 else 'lower'
         prompt += f"\n- Rated '{row['Song']}' {abs(diff):.1f} points {direction} than the crowd"
-    
+
     # Use the long-form analysis model as recommended
     # Request a longer output and auto-finish if the model cuts mid-sentence
     analysis = call_groq(prompt, MODEL_ANALYSIS, temperature=0.5, max_tokens=900)
@@ -104,7 +104,7 @@ Tone guide: Think "your music-obsessed friend who loves to playfully debate tast
         tail = call_groq(
             (
                 "Continue and finish the above analysis cleanly in the same tone. "
-                "Do not repeat prior lines; add 2–3 concluding sentences.\n\n" 
+                "Do not repeat prior lines; add 2–3 concluding sentences.\n\n"
                 f"Previous text:\n{analysis}\n"
             ),
             MODEL_ANALYSIS,
@@ -116,10 +116,10 @@ Tone guide: Think "your music-obsessed friend who loves to playfully debate tast
 
 def call_groq(
     prompt: str,
-    model: Optional[str] = None,
+    model: str | None = None,
     *,
-    temperature: Optional[float] = None,
-    max_tokens: Optional[int] = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
 ) -> str:
     try:
         from groq import Groq
@@ -143,7 +143,7 @@ def get_user_voting_insight(comparison_df: pd.DataFrame) -> str:
     """Get an LLM-generated insight about how this user's votes compare to the group."""
     if comparison_df is None or comparison_df.empty:
         return ""
-        
+
     try:
         analysis = analyze_user_votes(comparison_df)
         return analysis
@@ -165,7 +165,7 @@ def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) ->
     """
     if not top5:
         return []
-        
+
     # Build prompt for artist/genre recommendations (more grounded, less hallucination)
     prompt = f"""Based on someone's music taste, suggest {n} artists or music genres they should explore in 2025.
 
@@ -200,17 +200,17 @@ Important:
     try:
         # Structured JSON output model, lower temperature
         response = call_groq(prompt, MODEL_JSON, temperature=0.2, max_tokens=800)
-        
+
         # Try to parse JSON from response
         import json
         import re
-        
+
         # Extract JSON array if wrapped in markdown or other text
         json_match = re.search(r'\[.*\]', response, re.DOTALL)
         if json_match:
             json_str = json_match.group(0)
             recommendations = json.loads(json_str)
-            
+
             # Validate structure
             if isinstance(recommendations, list):
                 valid_recs = []
@@ -222,14 +222,14 @@ Important:
                             'reason': str(rec['reason'])
                         })
                 return valid_recs
-        
+
         # Fallback if JSON parsing fails
         return [{
             'song': 'Unable to analyze taste',
             'artist': '',
             'reason': 'Could not parse AI response. Please try refreshing.'
         }]
-        
+
     except Exception as e:
         return [{
             'song': 'Error generating recommendations',

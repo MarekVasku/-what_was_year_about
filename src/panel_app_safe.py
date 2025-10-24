@@ -1,8 +1,10 @@
 # panel_app.py
+from functools import lru_cache
+
 import pandas as pd
 import panel as pn
 import plotly.express as px
-from functools import lru_cache
+
 from load_data import fetch_data
 
 pn.extension("plotly")

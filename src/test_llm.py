@@ -1,12 +1,13 @@
 import os
 import sys
+
 import pandas as pd
 
 # Add src directory to Python path
 src_path = os.path.join(os.path.dirname(__file__), 'src')
 sys.path.append(src_path)
 
-from llm_implementation import analyze_user_votes, call_groq
+from llm_implementation import analyze_user_votes
 
 # Create a test comparison DataFrame with real song data
 test_data = {

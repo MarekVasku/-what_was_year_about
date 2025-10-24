@@ -1,8 +1,7 @@
 import gradio as gr
 from gradio import themes
-from dashboard import create_dashboard
-from data_utils import refresh_data
 
+from dashboard import create_dashboard
 
 # ---------- Gradio UI (UI-only, imports functionality from modules) ----------
 theme = themes.Soft(
@@ -37,14 +36,14 @@ CUSTOM_CSS = """
 """
 
 with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) as demo:
-    
+
     # Hero section with optional image
     with gr.Column(elem_classes=["hero"]):
         gr.Image("/Users/macbok/Documents/Projects/-what_was_year_about/static/header.png", show_label=False, height=300)
-        
+
         gr.Markdown("# What Was 2024 About")
         gr.Markdown("_Results of your's favourite yearly music chart_")
-        
+
         # Spotify Playlist Embed (centered)
         gr.HTML("""
             <div style="display: flex; justify-content: center; margin: 1rem 0;">
@@ -79,21 +78,21 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
                 show_label=True
             )
             refresh_btn = gr.Button("Refresh Data 🔄", variant="primary")
-    
+
     # Overview section (compact summary, no charts)
     with gr.Column(elem_classes=["overview-box"]):
         overview = gr.Markdown("")
-    
+
     # Podium visualization
     gr.Markdown("## The Podium")
     gr.Markdown("_The champions. Song winners of last years. The chosen ones. The songs that made you fill '10' without hesitation (or maybe they tied at 7.29, who knows)._")
     podium_plot = gr.Plot()
-    
+
     # Top 10 spotlight
     gr.Markdown("## Top 10 Spotlight")
     gr.Markdown("_Because everyone loves a top 10 list. No matter how many songs were in the final playlist, everyone loves top 10s._")
     top10_plot = gr.Plot()
-    
+
     # Distribution charts side by side
     gr.Markdown("## Score Distributions")
     gr.Markdown("_Ever wondered if everyone's just vibing around 7s or if there are actual opinions happening? And what about your voting patterns? These histograms know._")
@@ -102,7 +101,7 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
             avg_dist_plot = gr.Plot()
         with gr.Column(scale=1):
             all_votes_plot = gr.Plot()
-    
+
     # Full rankings
     gr.Markdown("## Complete Rankings")
     gr.Markdown("_All the songs. Every single one. Ranked from 'meh' to 'oh my, life changing song I am hearing'. Switch views to see where you agree or disagree._")
@@ -117,7 +116,7 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
             value="Final score + your score (overlay)",
         )
     main_plot = gr.Plot()
-    
+
     # All songs table and user comparison
     with gr.Row():
         with gr.Column(scale=1):
@@ -134,12 +133,12 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
                 interactive=False,
                 wrap=True
             )
-    
+
     # New user-specific visualizations (only shown when user email is provided)
     gr.Markdown("## Your Personal Music Analysis")
     warning_personal = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600; margin-bottom: 10px;'>⚠️ To see your personalized insights, enter your email address above.</p>")
     gr.Markdown("This is where your music taste is analyzed (if you filled this year's survey). Enter your email above to unlock personalized insight.")
-    
+
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### Biggest Disagreements")
@@ -149,27 +148,27 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
             gr.Markdown("### Your Top 10 vs Community")
             gr.Markdown("Left side: what the people chose. Right side: what you chose. The overlap reveals...")
             user_vs_top10_plot = gr.Plot()
-    
+
     gr.Markdown("### Your Rating Pattern")
     warning_rating = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>")
     gr.Markdown("_Are you a harsh critic handing out 3s like candy, or a generous soul showering 9s? This chart exposes your rating philosophy_")
     rating_pattern_plot = gr.Plot()
-    
+
     gr.Markdown("## Community Insights")
     gr.Markdown("_Dive into the collective consciousness. See patterns, chaos, and who's secretly rating everything a 5._")
-    
+
     gr.Markdown("### All Votes Heatmap")
     gr.Markdown("_Voters are anonymized except you_")
     heatmap_plot = gr.Plot()
-    
+
     gr.Markdown("### Most Polarizing Songs (Top 10)")
     gr.Markdown("_Where we all not met halfways. Maximum disagreement, maximum drama._")
     controversy_plot = gr.Plot()
-    
+
     gr.Markdown("### Most Agreeable Songs (Top 10)")
     gr.Markdown("_Consensus achieved. Everyone basically gave these (almost) the same score._")
     agreeable_plot = gr.Plot()
-    
+
     gr.Markdown("## Clustering Analysis")
     gr.Markdown(
         "<div style='font-size: 0.85rem; line-height:1.4; color:#6b7280; font-style: italic;'>"
@@ -177,16 +176,16 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
         "The 2D map is a t‑SNE visualization; closer dots ≈ more similar taste."
         "</div>"
     )
-    
+
     gr.Markdown("### 2D Taste Map")
     gr.Markdown("_Explore music taste similarities (anonymized). Currently far from being useful, will come handy with more voters (please vote next years!)._")
     taste_map_plot = gr.Plot()
-    
+
     gr.Markdown("## Your Music Taste Recommendations")
     warning_recommendations = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>")
     gr.Markdown("_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._")
     recommendations_box = gr.Markdown("")
-    
+
     def refresh_with_email(email_prefix, ranking_view_choice):
         """Wrapper to pass email and ranking view selector to create_dashboard."""
         # Map radio string to simple key
@@ -197,13 +196,13 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
         }
         view_key = mapping.get(ranking_view_choice, "overlay")
         results = create_dashboard(email_prefix, ranking_view=view_key)
-        
+
         # Hide warnings if email is provided and has data
         has_data = email_prefix and email_prefix.strip() != ""
         warning_text = "" if has_data else "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
-        
+
         return (*results, warning_text, warning_text, warning_text)
-    
+
     def refresh_main_chart_only(email_prefix, ranking_view_choice):
         """Refresh only the main chart when ranking view changes."""
         mapping = {
@@ -215,10 +214,10 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
         # Get full dashboard but only return main_plot (6th output)
         all_results = create_dashboard(email_prefix, ranking_view=view_key)
         return all_results[5]  # main_plot is the 6th item (index 5)
-    
+
     # Wire up refresh with email
     all_outputs = [
-        overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot, 
+        overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot,
         all_songs_table, user_comparison,
         disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, agreeable_plot,
         rating_pattern_plot,
@@ -228,38 +227,38 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
         warning_rating,
         warning_recommendations,
     ]
-    
+
     refresh_btn.click(
         refresh_with_email,
         inputs=[email_input, ranking_view],
         outputs=all_outputs,
     )
-    
+
     # Auto-refresh only main chart when ranking view changes
     ranking_view.change(
         refresh_main_chart_only,
         inputs=[email_input, ranking_view],
         outputs=main_plot,
     )
-    
+
     # Email input triggers refresh too
     email_input.submit(
         refresh_with_email,
         inputs=[email_input, ranking_view],
         outputs=all_outputs,
     )
-    
+
     # Initial load with empty email
     demo.load(
         lambda: (*create_dashboard("", ranking_view="overlay"), "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>", "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>", "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"),
         inputs=None,
         outputs=all_outputs,
     )
-    
+
     # Feedback section at the bottom
     gr.Markdown("---")
     gr.Markdown("## 💬 Your Input")
-    
+
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### Suggest Songs for 2025")
@@ -270,7 +269,7 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
                 lines=5,
                 max_lines=10,
             )
-        
+
         with gr.Column(scale=1):
             gr.Markdown("### Ideas for Improvement")
             gr.Markdown("_Missing a chart? Want a different visualization? Tell me what would make this better_")
@@ -280,50 +279,50 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
                 lines=5,
                 max_lines=10,
             )
-    
+
     submit_feedback_btn = gr.Button("Submit Feedback 📨", variant="primary", size="lg")
     feedback_status = gr.Markdown("")
-    
+
     def submit_feedback(email_prefix, songs, ideas):
         """Handle feedback submission - attach user's email prefix if provided, email + file backup."""
         if not songs.strip() and not ideas.strip():
             return "⚠️ Please fill in at least one field before submitting!"
-        
+
         try:
-            import smtplib
             import os
-            from email.mime.text import MIMEText
-            from email.mime.multipart import MIMEMultipart
+            import smtplib
             from datetime import datetime
-            
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+
             # Email configuration - get from environment variables
             sender_email = os.environ.get("SMTP_EMAIL", "")
             sender_password = os.environ.get("SMTP_PASSWORD", "")
             receiver_email = "maravasku@gmail.com"
-            
+
             msg = MIMEMultipart()
             msg['From'] = sender_email
             msg['To'] = receiver_email
             subject_suffix = f" | from: {email_prefix.strip()}" if email_prefix and email_prefix.strip() else ""
             msg['Subject'] = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}{subject_suffix}"
-            
+
             body = "New feedback received!\n\n"
             body += f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n\n"
-            
+
             if songs.strip():
                 body += "=" * 50 + "\n"
                 body += "🎵 SONG SUGGESTIONS FOR 2025:\n"
                 body += "=" * 50 + "\n"
                 body += songs.strip() + "\n\n"
-            
+
             if ideas.strip():
                 body += "=" * 50 + "\n"
                 body += "💡 IMPROVEMENT IDEAS:\n"
                 body += "=" * 50 + "\n"
                 body += ideas.strip() + "\n\n"
-            
+
             msg.attach(MIMEText(body, 'plain'))
-            
+
             # Always save to file as backup
             with open('feedback_log.txt', 'a', encoding='utf-8') as f:
                 f.write(f"\n{'='*60}\n")
@@ -331,7 +330,7 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
                 f.write(f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n")
                 f.write(f"{'='*60}\n")
                 f.write(body)
-            
+
             # Try to send email if credentials are configured
             if sender_email and sender_password:
                 try:
@@ -339,29 +338,29 @@ Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Venefi
                         server.starttls()
                         server.login(sender_email, sender_password)
                         server.send_message(msg)
-                    
+
                     message = "✅ **Thank you!** Your feedback has been sent via email.\n\n"
                 except Exception as email_error:
                     message = f"✅ **Thank you!** Feedback saved to file (email failed: {str(email_error)}).\n\n"
             else:
                 message = "✅ **Thank you!** Your feedback has been saved to file.\n\n"
-            
+
             if songs.strip():
                 message += f"**Songs suggested:** {len(songs.strip().splitlines())} lines\n"
             if ideas.strip():
                 message += f"**Ideas shared:** {len(ideas.strip().splitlines())} lines\n"
-            
+
             return message
-            
+
         except Exception as e:
             return f"❌ Error saving feedback: {str(e)}"
-    
+
     submit_feedback_btn.click(
         submit_feedback,
         inputs=[email_input, song_suggestions, improvement_ideas],
         outputs=feedback_status,
     )
-    
+
     # Thank you note
     gr.Markdown("---")
     gr.Markdown(

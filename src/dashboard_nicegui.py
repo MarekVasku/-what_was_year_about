@@ -6,13 +6,14 @@ data + visuals can be rendered with NiceGUI for experimentation.
 Run directly with: python src/dashboard_nicegui.py
 """
 from nicegui import ui
+
 from data_utils import get_data_cached
 from visuals import (
+    make_all_votes_distribution,
+    make_distribution_chart,
+    make_main_chart,
     make_podium_chart,
     make_top_10_spotlight,
-    make_main_chart,
-    make_distribution_chart,
-    make_all_votes_distribution,
 )
 
 
