@@ -23,6 +23,10 @@ CUSTOM_CSS = """
            border-radius: 12px; margin-bottom: 2rem; color: white;}
     .hero h1 {color: white !important; font-size: 2.5rem; margin-bottom: 0.5rem;}
     .hero p {font-size: 1.1rem; opacity: 0.9;}
+    /* Force Spotify note to be dark slate */
+    .hero p[style*="font-size: 11px"] {color: #0f172a !important;}
+    /* Force email instruction to be white */
+    .hero p[style*="font-size: 0.95rem"] {color: #ffffff !important;}
     .overview-box {background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;
                   color: #111827 !important; line-height: 1.6 !important; font-size: 1.1rem !important;}
     .overview-box h1, .overview-box h2, .overview-box h3 {color: #111827 !important;}
