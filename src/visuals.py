@@ -51,7 +51,7 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
             'text': "Complete Song Ranking",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis_title="Average Score",
         yaxis_title="",
@@ -72,6 +72,50 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
         )
     )
     
+    return fig
+
+
+def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
+    """Create a main ranking chart showing only the user's scores ordered by the user's ranking."""
+    if comparison is None or comparison.empty:
+        return go.Figure()
+
+    df_plot = comparison.sort_values('Your Score', ascending=True)
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=df_plot['Your Score'],
+        y=df_plot['Song'],
+        orientation='h',
+        name='Your Score',
+        marker=dict(
+            color=df_plot['Your Score'],
+            colorscale='Viridis',
+            line=dict(color='rgba(0,0,0,0.2)', width=1),
+            showscale=True,
+            colorbar=dict(title=dict(text="Your Score", font=dict(size=12)), thickness=12, len=0.7)
+        ),
+        hovertemplate='<b>%{y}</b><br>Your Score: %{x:.2f}<extra></extra>'
+    ))
+
+    fig.update_layout(
+        title={
+            'text': "Your Complete Ranking",
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
+        },
+        xaxis_title="Your Score",
+        yaxis_title="",
+        xaxis=dict(range=[0, 10.5], showgrid=True, gridcolor='rgba(0,0,0,0.05)'),
+        yaxis=dict(showgrid=False),
+        plot_bgcolor='#fff',
+        paper_bgcolor='white',
+        height=max(600, len(df_plot) * 25),
+        margin=dict(l=300, r=60, t=80, b=60),
+        showlegend=False
+    )
+
     return fig
 
 
@@ -120,15 +164,19 @@ def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
             font=dict(size=size_for_rank(row["Rank"]), color="#223")
         )
 
+    # Full x-axis from 0 to max with margin
+    max_score = float(top10["Average Score"].max())
+    x_max = min(10.5, round(max_score + 0.5, 2))
+
     fig.update_layout(
         title={'text': "Top 10 Songs", 'x': 0.5, 'xanchor': 'center',
-               'font': {'size': 20, 'color': '#2c3e50'}},
+               'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}},
         plot_bgcolor='#fff', paper_bgcolor='white',
-        xaxis=dict(range=[0, 10.5], title="Average Score",
+        xaxis=dict(range=[0, x_max], title="Average Score",
                    showgrid=True, gridcolor='rgba(0,0,0,0.05)'),
         yaxis=dict(showgrid=False, title=""),
-        height=470,
-        margin=dict(l=540, r=100, t=70, b=50),
+        height=500,
+        margin=dict(l=550, r=100, t=140, b=60),
         bargap=0.30
     )
     return fig
@@ -169,7 +217,7 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
             'text': "Average Score Distribution",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter', 'weight': 600}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         plot_bgcolor='#f8f9fa',
         paper_bgcolor='white',
@@ -182,14 +230,14 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
             zeroline=False
         ),
         yaxis=dict(
-            title="Number of Songs",
+            title="Number of Songs/Votes",
             showgrid=True,
             gridcolor='rgba(0,0,0,0.08)',
             gridwidth=1,
             zeroline=False
         ),
         height=350,
-        margin=dict(l=50, r=50, t=80, b=50),
+        margin=dict(l=50, r=50, t=0, b=50),
         showlegend=False,
         bargap=0.15
     )
@@ -242,7 +290,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
             'text': "All Individual Votes Distribution",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter', 'weight': 600}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         plot_bgcolor='#f8f9fa',
         paper_bgcolor='white',
@@ -256,7 +304,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
             zeroline=False
         ),
         yaxis=dict(
-            title="Number of Votes",
+            title="Number of SongsVotes",
             showgrid=True,
             gridcolor='rgba(0,0,0,0.08)',
             gridwidth=1,
@@ -332,7 +380,7 @@ def make_podium_chart(avg_scores: pd.DataFrame) -> go.Figure:
     y_max = min(10.0, y_hi + top_pad)
 
     fig.update_layout(
-        title={'text': "The Podium", 'x': 0.5, 'xanchor': 'center', 'font': {'size': 26, 'color': '#1a1a1a', 'family': 'Inter', 'weight': 600}},
+        title={'text': "The Podium", 'x': 0.5, 'xanchor': 'center', 'font': {'size': 26, 'color': '#1a1a1a', 'family': 'Inter'}},
         font=dict(family='Inter', color='#2c3e50'),
         xaxis=dict(
             showgrid=False,
@@ -395,7 +443,7 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
             'text': "Your Biggest Disagreements with the Group",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter', 'weight': 800}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         font=dict(family='Inter', color='#2c3e50'),
         xaxis=dict(
@@ -485,7 +533,10 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
             'text': "Your Top 10 vs Community Top 10",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter', 'weight': 600}
+            'y': 0.96,
+            'yanchor': 'top',
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'},
+            'pad': {'t': 0, 'b': 25}
         },
         font=dict(family='Inter', color='#2c3e50'),
         barmode='overlay',
@@ -507,7 +558,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
         legend=dict(
             orientation='h',
             yanchor='bottom',
-            y=1.08,
+            y=1.04,
             xanchor='center',
             x=0.5,
             bgcolor='rgba(255,255,255,0.8)',
@@ -564,7 +615,7 @@ def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> 
             'text': "All Votes Heatmap",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis_title="Songs",
         yaxis_title="Voters",
@@ -629,7 +680,7 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
             'text': "Most Polarizing Songs (Highest Vote Variance)",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter', 'weight': 600}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         font=dict(family='Inter', color='#2c3e50'),
         xaxis=dict(
@@ -710,7 +761,7 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
             'text': "Most Agreeable Songs (Lowest Vote Variance)",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis_title="Standard Deviation of Scores",
         yaxis_title="",
@@ -776,7 +827,7 @@ def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFra
             'text': f"Your Voting Pattern: {rating_type}",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis_title="Score",
         yaxis_title="Proportion of Votes",
@@ -837,7 +888,7 @@ def make_taste_similarity_chart(similarity_df: pd.DataFrame | None) -> go.Figure
             'text': "Your Taste Twins (Most Similar Voters)",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis_title="Similarity Score (Correlation)",
         xaxis=dict(range=[0, 1]),
@@ -906,7 +957,7 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             'text': "2D Taste Map",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis=dict(
             title="Taste Dimension 1",

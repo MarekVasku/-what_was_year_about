@@ -2,7 +2,6 @@ import pandas as pd
 from functools import lru_cache
 from load_data import fetch_data
 import numpy as np
-from typing import Any
 
 try:
     from sklearn.cluster import KMeans  # type: ignore

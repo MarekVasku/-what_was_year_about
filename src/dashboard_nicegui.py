@@ -52,13 +52,14 @@ def build_nicegui_dashboard() -> None:
     else:
         winner_display = '—'
 
-    top3_line = '  •  '.join([
+    top3_lines = [
         '🥇 ' + ' • '.join([f"{row['Song']} ({row['Average Score']:.2f})" for _, row in top1.iterrows()]) if not top1.empty else '🥇 —',
         '🥈 ' + ' • '.join([f"{row['Song']} ({row['Average Score']:.2f})" for _, row in top2.iterrows()]) if not top2.empty else '🥈 —',
         '🥉 ' + ' • '.join([f"{row['Song']} ({row['Average Score']:.2f})" for _, row in top3.iterrows()]) if not top3.empty else '🥉 —',
-    ])
+    ]
+    top3_text = '\n'.join(top3_lines)
 
-    overview = f"**Winner:** {winner_display}\n\n**Stats:** {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs:.2f}\n\n**Top 3:** {top3_line}"
+    overview = f"**Winner:** {winner_display}\n\n**Stats:** {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs:.2f}\n\n**Top 3:**\n{top3_text}"
     ui.markdown(overview)
 
     # Charts

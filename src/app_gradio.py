@@ -22,34 +22,43 @@ CUSTOM_CSS = """
     .hero h1 {color: white !important; font-size: 2.5rem; margin-bottom: 0.5rem;}
     .hero p {font-size: 1.1rem; opacity: 0.9;}
     .overview-box {background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;
-                  color: #374151 !important; line-height: 1.6 !important; font-size: 1.1rem !important;}
-    .overview-box h1, .overview-box h2, .overview-box h3 {color: #1f2937 !important;}
+                  color: #111827 !important; line-height: 1.6 !important; font-size: 1.1rem !important;}
+    .overview-box h1, .overview-box h2, .overview-box h3 {color: #111827 !important;}
     .overview-box h3 {font-size: 1.6rem !important; margin-top: 1.5rem !important; margin-bottom: 0.75rem !important;
                      font-weight: 600 !important; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;}
-    .overview-box p {font-size: 1.1rem !important; color: #374151 !important; margin-bottom: 1rem !important;}
+    .overview-box p {font-size: 1.1rem !important; color: #111827 !important; margin-bottom: 1rem !important;}
+    /* Force all inline text elements to default dark color for readability */
+    .overview-box strong, .overview-box em, .overview-box b, .overview-box i,
+    .overview-box span, .overview-box li, .overview-box a { color: #111827 !important; }
+    /* Tiny model info note */
+    .model-note { font-size: 0.75rem !important; color: #6b7280 !important; display: block; margin-top: 0.3rem; }
+    .overview-box .model-note { color: #6b7280 !important; }
     .stats-line {font-size: 1rem !important; color: #6b7280 !important; margin: 0.5rem 0 !important;}
 """
 
-with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS) as demo:
+with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) as demo:
     
     # Hero section with optional image
     with gr.Column(elem_classes=["hero"]):
         gr.Image("/Users/macbok/Documents/Projects/-what_was_year_about/static/header.png", show_label=False, height=300)
         
         gr.Markdown("# What Was 2024 About")
-        gr.Markdown("_Some people's definitive ranking of the best alternative songs_")
+        gr.Markdown("_Results of your's favourite yearly music chart_")
         
-        # Spotify Playlist Embed
+        # Spotify Playlist Embed (centered)
         gr.HTML("""
-            <iframe data-testid="embed-iframe" style="border-radius:12px; margin: 1rem auto; display: block;" 
-                    src="https://open.spotify.com/embed/playlist/5LplruxClPSYiAUjANLodn?utm_source=generator" 
-                    width="100%" 
-                    height="352" 
-                    frameBorder="0" 
-                    allowfullscreen="" 
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                    loading="lazy">
-            </iframe>
+            <div style="display: flex; justify-content: center; margin: 1rem 0;">
+                <iframe data-testid="embed-iframe" 
+                        style="border-radius:12px;" 
+                        src="https://open.spotify.com/embed/playlist/3f8Wce2yeoEpOIGufXDYwD?utm_source=generator&theme=0" 
+                        width="100%" 
+                        height="352" 
+                        frameBorder="0" 
+                        allowfullscreen="" 
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                        loading="lazy">
+                </iframe>
+            </div>
         """)
         
         with gr.Row():
@@ -66,14 +75,17 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
     
     # Podium visualization
     gr.Markdown("## The Podium")
+    gr.Markdown("_The champions. The legends. The songs that made people press '10' without hesitation (or maybe they tied at 7.29, who knows)_")
     podium_plot = gr.Plot()
     
     # Top 10 spotlight
     gr.Markdown("## Top 10 Spotlight")
+    gr.Markdown("_Because everyone loves a top 10 list. It's like the Billboard charts but with way fewer voters and probably better taste_")
     top10_plot = gr.Plot()
     
     # Distribution charts side by side
     gr.Markdown("## Score Distributions")
+    gr.Markdown("_Ever wondered if everyone's just vibing around 7s or if there are actual opinions happening? These histograms know_")
     with gr.Row():
         with gr.Column(scale=1):
             avg_dist_plot = gr.Plot()
@@ -82,19 +94,30 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
     
     # Full rankings
     gr.Markdown("## Complete Rankings")
+    gr.Markdown("_All the songs. Every single one. Ranked from 'meh' to 'chef's kiss'. Switch views to see where you agree or catastrophically disagree_")
+    with gr.Row():
+        ranking_view = gr.Radio(
+            label="View",
+            choices=[
+                "Final score + your score (overlay)",
+                "Only your scores",
+                "Only final score",
+            ],
+            value="Final score + your score (overlay)",
+        )
     main_plot = gr.Plot()
     
     # All songs table and user comparison
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("### 📊 Overall Rankings")
+            gr.Markdown("### Overall Rankings")
             all_songs_table = gr.Dataframe(
                 headers=["Rank", "Song", "Average Score"],
                 interactive=False,
                 wrap=True
             )
         with gr.Column(scale=1):
-            gr.Markdown("### 🎯 Your Votes vs Average")
+            gr.Markdown("### Your Votes vs Average")
             user_comparison = gr.Dataframe(
                 headers=["Rank", "Song", "Average Score", "Your Score", "Difference"],
                 interactive=False,
@@ -102,40 +125,71 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
             )
     
     # New user-specific visualizations (only shown when user email is provided)
-    gr.Markdown("## 🎭 Your Personal Music Analysis")
+    gr.Markdown("## Your Personal Music Analysis")
+    gr.Markdown("_This is where we gently roast your music taste. Enter your email above to unlock personalized judgment_")
     
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### Biggest Disagreements")
+            gr.Markdown("_Where you went full contrarian. Songs you loved that everyone hated, or hated that everyone loved. Fascinating stuff_")
             disagreements_plot = gr.Plot()
         with gr.Column(scale=1):
             gr.Markdown("### Your Top 10 vs Community")
+            gr.Markdown("_Left side: what the people chose. Right side: what YOU chose. The overlap (or lack thereof) reveals everything_")
             user_vs_top10_plot = gr.Plot()
     
     gr.Markdown("### Your Rating Pattern")
+    gr.Markdown("_Are you a harsh critic handing out 3s like candy, or a generous soul showering 9s? This chart exposes your rating philosophy_")
     rating_pattern_plot = gr.Plot()
     
-    gr.Markdown("## 📊 Community Insights")
+    gr.Markdown("## Community Insights")
+    gr.Markdown("_Dive into the collective consciousness. See patterns, chaos, and who's secretly rating everything a 5_")
     
     gr.Markdown("### All Votes Heatmap")
     gr.Markdown("_Voters are anonymized except you_")
     heatmap_plot = gr.Plot()
     
     gr.Markdown("### Most Polarizing Songs (Top 10)")
+    gr.Markdown("_The 'Marmite tracks'. Some gave it a 10, others a 1. Maximum disagreement, maximum drama_")
     controversy_plot = gr.Plot()
     
     gr.Markdown("### Most Agreeable Songs (Top 10)")
+    gr.Markdown("_Consensus achieved. Everyone basically gave these the same score. Boring? Maybe. Comforting? Absolutely_")
     agreeable_plot = gr.Plot()
     
-    gr.Markdown("## 🧬 Clustering Analysis")
+    gr.Markdown("## Clustering Analysis")
+    gr.Markdown("_Math meets music taste. We threw your votes into an algorithm and it spat out... shapes? Data science!_")
     
     gr.Markdown("### 2D Taste Map")
-    gr.Markdown("_Explore music taste similarities (anonymized)_")
+    gr.Markdown("_Explore music taste similarities (anonymized). Currently hard from being useful, will come handy with more voters (please vote next years!)_")
     taste_map_plot = gr.Plot()
     
-    def refresh_with_email(email_prefix):
-        """Wrapper to pass email to refresh_data."""
-        return create_dashboard(email_prefix)
+    gr.Markdown("## Your Music Taste Recommendations")
+    gr.Markdown("_Generative AI analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination_")
+    recommendations_box = gr.Markdown("")
+    
+    def refresh_with_email(email_prefix, ranking_view_choice):
+        """Wrapper to pass email and ranking view selector to create_dashboard."""
+        # Map radio string to simple key
+        mapping = {
+            "Final score + your score (overlay)": "overlay",
+            "Only your scores": "user",
+            "Only final score": "average",
+        }
+        view_key = mapping.get(ranking_view_choice, "overlay")
+        return create_dashboard(email_prefix, ranking_view=view_key)
+    
+    def refresh_main_chart_only(email_prefix, ranking_view_choice):
+        """Refresh only the main chart when ranking view changes."""
+        mapping = {
+            "Final score + your score (overlay)": "overlay",
+            "Only your scores": "user",
+            "Only final score": "average",
+        }
+        view_key = mapping.get(ranking_view_choice, "overlay")
+        # Get full dashboard but only return main_plot (6th output)
+        all_results = create_dashboard(email_prefix, ranking_view=view_key)
+        return all_results[5]  # main_plot is the 6th item (index 5)
     
     # Wire up refresh with email
     all_outputs = [
@@ -143,27 +197,149 @@ with gr.Blocks(title="2024 Best Alternative Songs", theme=theme, css=CUSTOM_CSS)
         all_songs_table, user_comparison,
         disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, agreeable_plot,
         rating_pattern_plot,
-        taste_map_plot
+        taste_map_plot,
+        recommendations_box,
     ]
     
     refresh_btn.click(
         refresh_with_email,
-        inputs=[email_input],
+        inputs=[email_input, ranking_view],
         outputs=all_outputs,
+    )
+    
+    # Auto-refresh only main chart when ranking view changes
+    ranking_view.change(
+        refresh_main_chart_only,
+        inputs=[email_input, ranking_view],
+        outputs=main_plot,
     )
     
     # Email input triggers refresh too
     email_input.submit(
         refresh_with_email,
-        inputs=[email_input],
+        inputs=[email_input, ranking_view],
         outputs=all_outputs,
     )
     
     # Initial load with empty email
     demo.load(
-        lambda: create_dashboard(""),
+        lambda: create_dashboard("", ranking_view="overlay"),
         inputs=None,
         outputs=all_outputs,
+    )
+    
+    # Feedback section at the bottom
+    gr.Markdown("---")
+    gr.Markdown("## 💬 Your Input")
+    
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("### 🎵 Suggest Songs for 2025")
+            gr.Markdown("_Got bangers we should hear? Drop as many song suggestions as you want below_")
+            song_suggestions = gr.Textbox(
+                label="Your 2025 Song Suggestions",
+                placeholder="Artist - Song Title\nArtist - Another Song\n...",
+                lines=5,
+                max_lines=10,
+            )
+        
+        with gr.Column(scale=1):
+            gr.Markdown("### 💡 Ideas for Improvement")
+            gr.Markdown("_Missing a chart? Want a different visualization? Tell us what would make this better_")
+            improvement_ideas = gr.Textbox(
+                label="Your Ideas",
+                placeholder="I think it would be cool if...",
+                lines=5,
+                max_lines=10,
+            )
+    
+    submit_feedback_btn = gr.Button("Submit Feedback 📨", variant="primary", size="lg")
+    feedback_status = gr.Markdown("")
+    
+    def submit_feedback(songs, ideas):
+        """Handle feedback submission - send via email."""
+        if not songs.strip() and not ideas.strip():
+            return "⚠️ Please fill in at least one field before submitting!"
+        
+        try:
+            import smtplib
+            import os
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            from datetime import datetime
+            
+            # Email configuration - get from environment variables
+            sender_email = os.environ.get("SMTP_EMAIL", "")
+            sender_password = os.environ.get("SMTP_PASSWORD", "")
+            receiver_email = "maravasku@gmail.com"
+            
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = receiver_email
+            msg['Subject'] = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            
+            body = "New feedback received!\n\n"
+            
+            if songs.strip():
+                body += "=" * 50 + "\n"
+                body += "🎵 SONG SUGGESTIONS FOR 2025:\n"
+                body += "=" * 50 + "\n"
+                body += songs.strip() + "\n\n"
+            
+            if ideas.strip():
+                body += "=" * 50 + "\n"
+                body += "💡 IMPROVEMENT IDEAS:\n"
+                body += "=" * 50 + "\n"
+                body += ideas.strip() + "\n\n"
+            
+            msg.attach(MIMEText(body, 'plain'))
+            
+            # Always save to file as backup
+            with open('feedback_log.txt', 'a', encoding='utf-8') as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"{'='*60}\n")
+                f.write(body)
+            
+            # Try to send email if credentials are configured
+            if sender_email and sender_password:
+                try:
+                    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                        server.starttls()
+                        server.login(sender_email, sender_password)
+                        server.send_message(msg)
+                    
+                    message = "✅ **Thank you!** Your feedback has been sent via email.\n\n"
+                except Exception as email_error:
+                    message = f"✅ **Thank you!** Feedback saved to file (email failed: {str(email_error)}).\n\n"
+            else:
+                message = "✅ **Thank you!** Your feedback has been saved to file.\n\n"
+            
+            if songs.strip():
+                message += f"**Songs suggested:** {len(songs.strip().splitlines())} lines\n"
+            if ideas.strip():
+                message += f"**Ideas shared:** {len(ideas.strip().splitlines())} lines\n"
+            
+            return message
+            
+        except Exception as e:
+            return f"❌ Error saving feedback: {str(e)}"
+    
+    submit_feedback_btn.click(
+        submit_feedback,
+        inputs=[song_suggestions, improvement_ideas],
+        outputs=feedback_status,
+    )
+    
+    # Thank you note
+    gr.Markdown("---")
+    gr.Markdown(
+        "<p style='text-align: center; font-size: 0.9rem; color: #6b7280; line-height: 1.6;'>"
+        "Thanks for voting, listening, discussing, and generally giving a damn about music. "
+        "This wouldn't exist without people who care enough to argue about whether a song deserves a 7 or an 8. "
+        "See you next year 🎧"
+        "</p>",
+        elem_classes=[]
     )
 
 
