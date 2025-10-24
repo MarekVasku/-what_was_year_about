@@ -1,6 +1,6 @@
 import gradio as gr
 from gradio import themes
-
+from pathlib import Path
 from dashboard import create_dashboard
 
 # ---------- Gradio UI (UI-only, imports functionality from modules) ----------
@@ -13,6 +13,9 @@ theme = themes.Soft(
     body_background_fill="*neutral_50",
     block_title_text_weight="600",
 )
+
+ROOT = Path(__file__).resolve().parent.parent
+HEADER = ROOT / "static" / "header.png"
 
 CUSTOM_CSS = """
     .gradio-container {max-width: 1400px !important;}
@@ -39,7 +42,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
     # Hero section with optional image
     with gr.Column(elem_classes=["hero"]):
-        gr.Image("/Users/macbok/Documents/Projects/-what_was_year_about/static/header.png", show_label=False, height=300)
+        gr.Image(value=str(HEADER), show_label=False, height=300)
 
         gr.Markdown("# What Was 2024 About")
         gr.Markdown("_Results of your's favourite yearly music chart_")

@@ -1,8 +1,8 @@
 nicegui
 gspread
 pandas
-gradio
-plotly
+gradio==4.44.0
+plotly==5.24.1
 groq
 scikit-learn
 numpy>=2.3.4
