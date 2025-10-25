@@ -341,9 +341,13 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             sender_email = os.environ.get("SMTP_EMAIL", "")
             sender_password = os.environ.get("SMTP_PASSWORD", "")
             receiver_email = "maravasku@gmail.com"
+            
+            # Debug: Check if credentials exist
+            has_email = bool(sender_email)
+            has_password = bool(sender_password)
 
             msg = MIMEMultipart()
-            msg['From'] = sender_email
+            msg['From'] = sender_email if sender_email else "noreply@musicchart.app"
             msg['To'] = receiver_email
             subject_suffix = f" | from: {email_prefix.strip()}" if email_prefix and email_prefix.strip() else ""
             msg['Subject'] = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}{subject_suffix}"
@@ -366,17 +370,22 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             msg.attach(MIMEText(body, 'plain'))
 
             # Always save to file as backup
-            with open('feedback_log.txt', 'a', encoding='utf-8') as f:
-                f.write(f"\n{'='*60}\n")
-                f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n")
-                f.write(f"{'='*60}\n")
-                f.write(body)
+            try:
+                with open('feedback_log.txt', 'a', encoding='utf-8') as f:
+                    f.write(f"\n{'='*60}\n")
+                    f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    f.write(f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n")
+                    f.write(f"Has SMTP_EMAIL: {has_email}, Has SMTP_PASSWORD: {has_password}\n")
+                    f.write(f"{'='*60}\n")
+                    f.write(body)
+                file_saved = True
+            except Exception as file_error:
+                file_saved = False
 
             # Try to send email if credentials are configured
-            if sender_email and sender_password:
+            if has_email and has_password:
                 try:
-                    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                    with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
                         server.starttls()
                         server.login(sender_email, sender_password)
                         server.send_message(msg)
@@ -386,24 +395,37 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                     import traceback
                     error_details = traceback.format_exc()
                     # Log detailed error to file for debugging
-                    with open('email_error_log.txt', 'a', encoding='utf-8') as err_log:
-                        err_log.write(f"\n{'='*60}\n")
-                        err_log.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                        err_log.write(f"Error: {str(email_error)}\n")
-                        err_log.write(f"Traceback:\n{error_details}\n")
-                    message = f"✅ **Thank you!** Feedback saved to file (email failed: {str(email_error)}).\n\n"
+                    try:
+                        with open('email_error_log.txt', 'a', encoding='utf-8') as err_log:
+                            err_log.write(f"\n{'='*60}\n")
+                            err_log.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                            err_log.write(f"Error: {str(email_error)}\n")
+                            err_log.write(f"Traceback:\n{error_details}\n")
+                    except:
+                        pass
+                    message = f"✅ **Thank you!** Feedback saved to file.\n\n⚠️ Email failed: {str(email_error)}\n\n"
             else:
-                message = "✅ **Thank you!** Your feedback has been saved to file (no email credentials configured).\n\n"
+                missing = []
+                if not has_email:
+                    missing.append("SMTP_EMAIL")
+                if not has_password:
+                    missing.append("SMTP_PASSWORD")
+                message = f"✅ **Thank you!** Your feedback has been saved to file.\n\n⚠️ Email not configured (missing: {', '.join(missing)}).\n\n"
 
             if songs.strip():
                 message += f"**Songs suggested:** {len(songs.strip().splitlines())} lines\n"
             if ideas.strip():
                 message += f"**Ideas shared:** {len(ideas.strip().splitlines())} lines\n"
+            
+            if not file_saved:
+                message += "\n⚠️ Warning: Could not save to feedback log file."
 
             return message
 
         except Exception as e:
-            return f"❌ Error saving feedback: {str(e)}"
+            import traceback
+            error_trace = traceback.format_exc()
+            return f"❌ Error saving feedback: {str(e)}\n\nDetails:\n{error_trace}"
 
     submit_feedback_btn.click(
         submit_feedback,
