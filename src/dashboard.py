@@ -24,12 +24,15 @@ from visuals import (
 )
 
 
-def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay"):
+def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay", year: int = 2024):
     """Generate all dashboard components with optional user comparison.
 
-    ranking_view: one of "overlay" (avg + your scores), "user" (only your scores), or "average" (only group average).
+    Args:
+        user_email_prefix: User's email prefix for personalized data
+        ranking_view: one of "overlay" (avg + your scores), "user" (only your scores), or "average" (only group average)
+        year: Year to display data for (2019, 2023, or 2024)
     """
-    df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, error, comparison = get_data_cached(user_email_prefix)
+    df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, error, comparison = get_data_cached(user_email_prefix, year)
 
     empty_fig = make_podium_chart(pd.DataFrame())
     if error:

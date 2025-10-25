@@ -81,17 +81,17 @@ CUSTOM_CSS = """
     }
 """
 
-with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) as demo:
+with gr.Blocks(title="What was the year about - music chart", theme=theme, css=CUSTOM_CSS) as demo:
 
     # Hero section with optional image
     with gr.Column(elem_classes=["hero"]):
         gr.Image(value=str(HEADER), show_label=False, height=300)
 
-        gr.Markdown("# What Was 2024 About")
-        gr.Markdown("_Results of your's favourite yearly music chart_")
+        hero_title = gr.Markdown("# What Was 2024 About")
+        hero_subtitle = gr.Markdown("_Results of your's favourite yearly music chart_")
 
-        # Spotify Playlist Embed (centered)
-        gr.HTML("""
+        # Spotify Playlist Embed (centered) - only for 2024
+        spotify_embed = gr.HTML("""
             <div style="display: flex; justify-content: center; margin: 1rem 0;">
                 <iframe data-testid="embed-iframe" 
                         style="border-radius:12px;" 
@@ -104,14 +104,15 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                         loading="lazy">
                 </iframe>
             </div>
-        """)
-        gr.Markdown(
+        """, visible=True)
+        spotify_note = gr.Markdown(
             (
                 "Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Veneficium by Xiu Xiu) were removed from "
                 "Spotify by artists protesting Spotify's policies about their investment in drones/military investments. "
                 "Also F*ck ICE just for the sake."
             ),
             elem_classes=["model-note"],
+            visible=True
         )
         gr.Markdown(
             "<p style='font-size: 0.95rem; color: #ffffff !important; text-align: center; margin: 0.5rem 0 0.25rem;'>"
@@ -119,12 +120,20 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             "</p>"
         )
         with gr.Row():
+            year_selector = gr.Dropdown(
+                label="Select Year",
+                choices=[2024, 2023, 2019],
+                value=2024,
+                show_label=True,
+                scale=1
+            )
             email_input = gr.Textbox(
                 label="Your email prefix",
                 placeholder="e.g., macdemarco (without @gmail.com)",
-                show_label=True
+                show_label=True,
+                scale=2
             )
-            refresh_btn = gr.Button("Refresh Data 🔄", variant="primary")
+            refresh_btn = gr.Button("Refresh Data 🔄", variant="primary", scale=1)
 
     # Overview section (compact summary, no charts)
     with gr.Column(elem_classes=["overview-box"]):
@@ -233,8 +242,8 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     gr.Markdown("_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._")
     recommendations_box = gr.Markdown("")
 
-    def refresh_with_email(email_prefix, ranking_view_choice):
-        """Wrapper to pass email and ranking view selector to create_dashboard."""
+    def refresh_with_email(year, email_prefix, ranking_view_choice):
+        """Wrapper to pass year, email and ranking view selector to create_dashboard."""
         # Map radio string to simple key
         mapping = {
             "Final score + your score (overlay)": "overlay",
@@ -242,15 +251,25 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             "Only your scores": "user",
         }
         view_key = mapping.get(ranking_view_choice, "overlay")
-        results = create_dashboard(email_prefix, ranking_view=view_key)
+        results = create_dashboard(email_prefix, ranking_view=view_key, year=year)
 
         # Hide warnings if email is provided and has data
         has_data = email_prefix and email_prefix.strip() != ""
         warning_text = "" if has_data else "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
 
-        return (*results, warning_text, warning_text, warning_text)
+        # Update hero title based on year
+        title = f"# What Was {year} About"
+        
+        # Show Spotify embed only for 2024
+        show_spotify = (year == 2024)
 
-    def refresh_main_chart_only(email_prefix, ranking_view_choice):
+        # Use gr.update to toggle visibility for HTML/Markdown components
+        spotify_embed_update = gr.update(visible=show_spotify)
+        spotify_note_update = gr.update(visible=show_spotify)
+
+        return (title, *results, warning_text, warning_text, warning_text, spotify_embed_update, spotify_note_update)
+
+    def refresh_main_chart_only(year, email_prefix, ranking_view_choice):
         """Refresh only the main chart when ranking view changes."""
         mapping = {
             "Final score + your score (overlay)": "overlay",
@@ -259,11 +278,12 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
         }
         view_key = mapping.get(ranking_view_choice, "overlay")
         # Get full dashboard but only return main_plot (6th output)
-        all_results = create_dashboard(email_prefix, ranking_view=view_key)
+        all_results = create_dashboard(email_prefix, ranking_view=view_key, year=year)
         return all_results[5]  # main_plot is the 6th item (index 5)
 
     # Wire up refresh with email
     all_outputs = [
+        hero_title,  # Add hero_title as first output
         overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot,
         all_songs_table, user_comparison,
         disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, agreeable_plot,
@@ -273,31 +293,48 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
         warning_personal,
         warning_rating,
         warning_recommendations,
+        spotify_embed,  # Add spotify visibility control
+        spotify_note,    # Add spotify note visibility control
     ]
 
     refresh_btn.click(
         refresh_with_email,
-        inputs=[email_input, ranking_view],
+        inputs=[year_selector, email_input, ranking_view],
         outputs=all_outputs,
     )
 
     # Auto-refresh only main chart when ranking view changes
     ranking_view.change(
         refresh_main_chart_only,
-        inputs=[email_input, ranking_view],
+        inputs=[year_selector, email_input, ranking_view],
         outputs=main_plot,
     )
 
     # Email input triggers refresh too
     email_input.submit(
         refresh_with_email,
-        inputs=[email_input, ranking_view],
+        inputs=[year_selector, email_input, ranking_view],
         outputs=all_outputs,
     )
 
-    # Initial load with empty email
+    # Year selector triggers refresh too
+    year_selector.change(
+        refresh_with_email,
+        inputs=[year_selector, email_input, ranking_view],
+        outputs=all_outputs,
+    )
+
+    # Initial load with empty email and default year 2024
     demo.load(
-        lambda: (*create_dashboard("", ranking_view="overlay"), "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>", "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>", "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"),
+        lambda: (
+            "# What Was 2024 About",
+            *create_dashboard("", ranking_view="overlay", year=2024),
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
+            gr.update(visible=True),
+            gr.update(visible=True),
+        ),
         inputs=None,
         outputs=all_outputs,
     )
