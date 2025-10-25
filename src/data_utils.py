@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from load_data import fetch_data
+import math
 
 try:
     from sklearn.cluster import KMeans  # type: ignore
@@ -51,6 +52,94 @@ def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.Dat
     return df, avg_scores
 
 
+def _standardize_legacy_votes(df: pd.DataFrame | None, year: int) -> pd.DataFrame:
+    """Convert legacy layouts (2019/2023) into 2024-like voter-row matrix.
+
+    Desired output columns:
+      - 'Timestamp' (empty string)
+      - 'Email address' (synthetic: "<voter>@legacy")
+      - then one column per song title. If artist available, title = "<song> - <artist>".
+    """
+    if df is None or df.empty:
+        return pd.DataFrame()
+
+    # Normalize headers to strings
+    df2 = df.copy()
+    df2.columns = [str(c).strip() for c in df2.columns]
+
+    # Helper to find a column by exact lower-case name
+    def find_col(name: str) -> str | None:
+        for c in df2.columns:
+            if c.lower().strip() == name:
+                return c
+        return None
+
+    song_col = find_col("song")
+    artist_col = find_col("artist")
+    if song_col is None:
+        return pd.DataFrame()
+
+    # Build unified title
+    if artist_col is not None:
+        titles = (
+            df2[song_col].astype(str).str.strip()
+            + " - "
+            + df2[artist_col].astype(str).str.strip()
+        ).str.strip()
+    else:
+        titles = df2[song_col].astype(str).str.strip()
+
+    # Candidate voter columns (exclude metadata-ish columns)
+    exclude = {song_col}
+    for meta in [artist_col, find_col("order"), find_col("rank"), find_col("average score")]:
+        if meta:
+            exclude.add(meta)
+    candidates = [c for c in df2.columns if c not in exclude]
+
+    def is_vote_column(series: pd.Series) -> bool:
+        vals = pd.to_numeric(series, errors="coerce")
+        total = vals.notna().sum()
+        if total == 0:
+            return False
+        in_range = vals.between(1, 10, inclusive="both").sum()
+        return in_range >= 1 and in_range >= max(1, int(0.1 * total))
+
+    voter_cols = [c for c in candidates if is_vote_column(df2[c])]
+    if not voter_cols:
+        return pd.DataFrame()
+
+    # Build standardized voter-row matrix (row per voter)
+    songs = list(titles)
+    rows: list[dict] = []
+    for voter in voter_cols:
+        vals = pd.to_numeric(df2[voter], errors="coerce")
+        row: dict = {"Timestamp": "", "Email address": f"{voter}@legacy"}
+        for title, v in zip(songs, vals):
+            row[title] = float(v) if pd.notna(v) else math.nan
+        rows.append(row)
+
+    std = pd.DataFrame(rows)
+    fixed = ["Timestamp", "Email address"]
+    song_cols = [c for c in std.columns if c not in fixed]
+    return std[fixed + sorted(song_cols)]
+
+
+def _load_year_df(year: int) -> pd.DataFrame:
+    """Return a DataFrame appropriate for computations for the given year.
+
+    - 2024: return raw 2024 sheet as-is.
+    - 2019/2023: load legacy sheet and standardize to 2024-like format.
+    """
+    if year == 2024:
+        return fetch_data(2024)
+    elif year in (2019, 2023):
+        raw = fetch_data(year)
+        std = _standardize_legacy_votes(raw, year)
+        return std if not std.empty else pd.DataFrame()
+    else:
+        raise ValueError("Unsupported year")
+
+
 def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataFrame, str | None]:
     """Get votes for a specific user by their email prefix.
     
@@ -81,17 +170,18 @@ def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataF
     return user_votes, None
 
 
-def compare_user_votes(email_prefix: str) -> tuple[pd.DataFrame, str | None]:
+def compare_user_votes(email_prefix: str, year: int = 2024) -> tuple[pd.DataFrame, str | None]:
     """Compare a user's votes against the average scores.
     
     Args:
         email_prefix: User's email prefix (before @)
+        year: Year to load data for (2019, 2023, or 2024)
         
     Returns:
         tuple[comparison DataFrame, error message or None]
     """
     try:
-        df = fetch_data()
+        df = _load_year_df(year)
         if df is None:
             return pd.DataFrame(), "No data available"
         df_raw, avg_scores = compute_scores(df)
@@ -126,17 +216,22 @@ def compare_user_votes(email_prefix: str) -> tuple[pd.DataFrame, str | None]:
         return pd.DataFrame(), str(e)
 
 
-@lru_cache(maxsize=2)  # Cache both general stats and per-user comparisons
-def get_data_cached(user_email_prefix: str = ""):
-    """Fetch and cache data with metrics."""
+@lru_cache(maxsize=10)  # Cache for multiple years and users
+def get_data_cached(user_email_prefix: str = "", year: int = 2024):
+    """Fetch and cache data with metrics.
+    
+    Args:
+        user_email_prefix: User's email prefix for personalized data
+        year: Year to load data for (2019, 2023, or 2024)
+    """
     try:
-        df = fetch_data()
+        df = _load_year_df(year)
         df_raw, avg_scores = compute_scores(df)
 
         # If user email provided, get comparison
         comparison = None
         if user_email_prefix:
-            comparison, error = compare_user_votes(user_email_prefix)
+            comparison, error = compare_user_votes(user_email_prefix, year)
             if error:
                 return None, pd.DataFrame(), 0, 0.0, 0, error, None
 
