@@ -2,6 +2,11 @@ import gradio as gr
 from gradio import themes
 from pathlib import Path
 from dashboard import create_dashboard
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
+load_dotenv()
 
 # ---------- Gradio UI (UI-only, imports functionality from modules) ----------
 theme = themes.Soft(
