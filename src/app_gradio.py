@@ -341,21 +341,13 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             from datetime import datetime
             from email.mime.multipart import MIMEMultipart
             from email.mime.text import MIMEText
+            import requests
 
             # Email configuration - get from environment variables
             sender_email = os.environ.get("SMTP_EMAIL", "")
             sender_password = os.environ.get("SMTP_PASSWORD", "")
+            webhook_url = os.environ.get("WEBHOOK_URL", "")  # For Hugging Face deployment
             receiver_email = "maravasku@gmail.com"
-            
-            # Debug: Check if credentials exist
-            has_email = bool(sender_email)
-            has_password = bool(sender_password)
-
-            msg = MIMEMultipart()
-            msg['From'] = sender_email if sender_email else "noreply@musicchart.app"
-            msg['To'] = receiver_email
-            subject_suffix = f" | from: {email_prefix.strip()}" if email_prefix and email_prefix.strip() else ""
-            msg['Subject'] = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}{subject_suffix}"
 
             body = "New feedback received!\n\n"
             body += f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n\n"
@@ -372,50 +364,65 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                 body += "=" * 50 + "\n"
                 body += ideas.strip() + "\n\n"
 
-            msg.attach(MIMEText(body, 'plain'))
-
             # Always save to file as backup
             try:
                 with open('feedback_log.txt', 'a', encoding='utf-8') as f:
                     f.write(f"\n{'='*60}\n")
                     f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                     f.write(f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n")
-                    f.write(f"Has SMTP_EMAIL: {has_email}, Has SMTP_PASSWORD: {has_password}\n")
                     f.write(f"{'='*60}\n")
                     f.write(body)
                 file_saved = True
-            except Exception as file_error:
+            except Exception:
                 file_saved = False
 
-            # Try to send email if credentials are configured
-            if has_email and has_password:
+            email_sent = False
+            email_method = None
+
+            # Try webhook first (works in Hugging Face Spaces)
+            if webhook_url:
                 try:
+                    subject = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                    if email_prefix and email_prefix.strip():
+                        subject += f" | from: {email_prefix.strip()}"
+                    
+                    payload = {
+                        "to": receiver_email,
+                        "subject": subject,
+                        "body": body
+                    }
+                    response = requests.post(webhook_url, json=payload, timeout=10)
+                    if response.status_code == 200:
+                        email_sent = True
+                        email_method = "webhook"
+                except Exception:
+                    pass
+
+            # Try SMTP if webhook didn't work (for local testing)
+            if not email_sent and sender_email and sender_password:
+                try:
+                    msg = MIMEMultipart()
+                    msg['From'] = sender_email
+                    msg['To'] = receiver_email
+                    subject_suffix = f" | from: {email_prefix.strip()}" if email_prefix and email_prefix.strip() else ""
+                    msg['Subject'] = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}{subject_suffix}"
+                    msg.attach(MIMEText(body, 'plain'))
+                    
                     with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
                         server.starttls()
                         server.login(sender_email, sender_password)
                         server.send_message(msg)
+                    email_sent = True
+                    email_method = "SMTP"
+                except Exception:
+                    pass
 
-                    message = "✅ **Thank you!** Your feedback has been sent via email.\n\n"
-                except Exception as email_error:
-                    import traceback
-                    error_details = traceback.format_exc()
-                    # Log detailed error to file for debugging
-                    try:
-                        with open('email_error_log.txt', 'a', encoding='utf-8') as err_log:
-                            err_log.write(f"\n{'='*60}\n")
-                            err_log.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                            err_log.write(f"Error: {str(email_error)}\n")
-                            err_log.write(f"Traceback:\n{error_details}\n")
-                    except:
-                        pass
-                    message = f"✅ **Thank you!** Feedback saved to file.\n\n⚠️ Email failed: {str(email_error)}\n\n"
+            # Build response message
+            if email_sent:
+                message = f"✅ **Thank you!** Your feedback has been sent via {email_method}.\n\n"
             else:
-                missing = []
-                if not has_email:
-                    missing.append("SMTP_EMAIL")
-                if not has_password:
-                    missing.append("SMTP_PASSWORD")
-                message = f"✅ **Thank you!** Your feedback has been saved to file.\n\n⚠️ Email not configured (missing: {', '.join(missing)}).\n\n"
+                message = "✅ **Thank you!** Your feedback has been saved.\n\n"
+                message += "ℹ️ Email notification unavailable (configure WEBHOOK_URL for Hugging Face or SMTP for local).\n\n"
 
             if songs.strip():
                 message += f"**Songs suggested:** {len(songs.strip().splitlines())} lines\n"
