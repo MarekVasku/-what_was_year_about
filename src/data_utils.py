@@ -221,11 +221,14 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
     if df is None or df.empty or len(df.columns) < 3:
         return pd.DataFrame(columns=['Voter', 'X', 'Y', 'Is_Current_User'])
 
-    song_cols = df.columns[2:]
-    df_numeric = df[song_cols].apply(pd.to_numeric, errors='coerce')
+    # Use a stable voter order to ensure deterministic t-SNE across environments
+    df_sorted = df.sort_values('Email address').reset_index(drop=True)
+    song_cols = df_sorted.columns[2:]
+    df_numeric = df_sorted[song_cols].apply(pd.to_numeric, errors='coerce')
 
-    # Fill NaN with mean for each voter (so they can still be positioned)
-    df_filled = df_numeric.fillna(df_numeric.mean(axis=1, skipna=True).iloc[0])
+    # Fill NaN with each voter's own mean (row-wise), not a single scalar from the first row
+    # This avoids environment-dependent differences from row ordering
+    df_filled = df_numeric.apply(lambda row: row.fillna(row.mean()), axis=1)
 
     # Need at least 2 voters and some valid data
     if len(df_filled) < 2 or df_filled.isna().all().all():
@@ -244,7 +247,7 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
         coords_2d = tsne.fit_transform(df_scaled)  # type: ignore
 
         # Create result dataframe
-        voter_names = df['Email address'].str.split('@').str[0].tolist()
+        voter_names = df_sorted['Email address'].str.split('@').str[0].tolist()
         result = pd.DataFrame({
             'Voter': voter_names,
             'X': coords_2d[:, 0],
