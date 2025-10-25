@@ -10,7 +10,7 @@ theme = themes.Soft(
     neutral_hue="slate",
     font=themes.GoogleFont("Inter"),
 ).set(
-    body_background_fill="*neutral_50",
+    body_background_fill="*neutral_950",
     block_title_text_weight="600",
 )
 
@@ -25,13 +25,14 @@ CUSTOM_CSS = """
     .hero p {font-size: 1.1rem; opacity: 0.9;}
     /* Force email instruction to be white */
     .hero p[style*="font-size: 0.95rem"] {color: #ffffff !important;}
+    /* Winner + Top 3 panel should stay light */
     .overview-box {background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;
                   color: #111827 !important; line-height: 1.6 !important; font-size: 1.1rem !important;}
     .overview-box h1, .overview-box h2, .overview-box h3 {color: #111827 !important;}
     .overview-box h3 {font-size: 1.6rem !important; margin-top: 1.5rem !important; margin-bottom: 0.75rem !important;
                      font-weight: 600 !important; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;}
     .overview-box p {font-size: 1.1rem !important; color: #111827 !important; margin-bottom: 1rem !important;}
-    /* Force all inline text elements to default dark color for readability */
+    /* Force inline elements to dark color inside the light panel */
     .overview-box strong, .overview-box em, .overview-box b, .overview-box i,
     .overview-box span, .overview-box li, .overview-box a { color: #111827 !important; }
     /* Tiny model info note */

@@ -957,22 +957,24 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             'text': "2D Taste Map",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
+            'font': {'size': 24, 'color': '#e5e7eb', 'family': 'Inter'}
         },
         xaxis=dict(
-            title="Taste Dimension 1",
+            title=dict(text="Taste Dimension 1", font=dict(color='#cbd5e1')),
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.1)',
-            zeroline=False
+            gridcolor='rgba(255,255,255,0.08)',
+            zeroline=False,
+            color='#cbd5e1',
         ),
         yaxis=dict(
-            title="Taste Dimension 2",
+            title=dict(text="Taste Dimension 2", font=dict(color='#cbd5e1')),
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.1)',
-            zeroline=False
+            gridcolor='rgba(255,255,255,0.08)',
+            zeroline=False,
+            color='#cbd5e1',
         ),
-        plot_bgcolor='#fafafa',
-        paper_bgcolor='white',
+        plot_bgcolor='#0f172a',
+        paper_bgcolor='#0b1220',
         height=400,
         margin=dict(l=80, r=80, t=80, b=60),
         hovermode='closest',
@@ -982,7 +984,8 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             yanchor='bottom',
             y=1.02,
             xanchor='center',
-            x=0.5
+            x=0.5,
+            font=dict(color='#e5e7eb')
         )
     )
     
