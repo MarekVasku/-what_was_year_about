@@ -387,12 +387,15 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                     if email_prefix and email_prefix.strip():
                         subject += f" | from: {email_prefix.strip()}"
                     
-                    # Send as form data instead of JSON for better Make.com compatibility
+                    # Webhook payload: keep it minimal and structured (no duplicate fields)
                     payload = {
                         "to": receiver_email,
                         "subject": subject,
                         "body": body,
-                        "text": body  # Add duplicate field for compatibility
+                        # Extra structured fields for downstream mappers (optional)
+                        "email_prefix": email_prefix or "",
+                        "songs_raw": songs.strip() if songs and songs.strip() else "",
+                        "ideas_raw": ideas.strip() if ideas and ideas.strip() else "",
                     }
                     
                     # Try both JSON and form data formats
