@@ -383,9 +383,17 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
                     message = "✅ **Thank you!** Your feedback has been sent via email.\n\n"
                 except Exception as email_error:
+                    import traceback
+                    error_details = traceback.format_exc()
+                    # Log detailed error to file for debugging
+                    with open('email_error_log.txt', 'a', encoding='utf-8') as err_log:
+                        err_log.write(f"\n{'='*60}\n")
+                        err_log.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                        err_log.write(f"Error: {str(email_error)}\n")
+                        err_log.write(f"Traceback:\n{error_details}\n")
                     message = f"✅ **Thank you!** Feedback saved to file (email failed: {str(email_error)}).\n\n"
             else:
-                message = "✅ **Thank you!** Your feedback has been saved to file.\n\n"
+                message = "✅ **Thank you!** Your feedback has been saved to file (no email credentials configured).\n\n"
 
             if songs.strip():
                 message += f"**Songs suggested:** {len(songs.strip().splitlines())} lines\n"
