@@ -187,7 +187,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     gr.HTML(
         "<p style='font-size: 0.85rem; line-height: 1.4; color: #6b7280; font-style: italic; margin-bottom: 1rem;'>"
         "Clustering: K‑Means on standardized voter rating vectors. "
-        "The 2D map is a t‑SNE visualization; closer dots ≈ more similar taste."
+        "The 2D map is an MDS visualization; closer dots ≈ more similar taste."
         "</p>"
     )
 
