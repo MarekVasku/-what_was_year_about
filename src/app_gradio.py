@@ -23,8 +23,6 @@ CUSTOM_CSS = """
            border-radius: 12px; margin-bottom: 2rem; color: white;}
     .hero h1 {color: white !important; font-size: 2.5rem; margin-bottom: 0.5rem;}
     .hero p {font-size: 1.1rem; opacity: 0.9;}
-    /* Force Spotify note to be dark slate */
-    .hero p[style*="font-size: 11px"] {color: #0f172a !important;}
     /* Force email instruction to be white */
     .hero p[style*="font-size: 0.95rem"] {color: #ffffff !important;}
     .overview-box {background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;
@@ -37,8 +35,10 @@ CUSTOM_CSS = """
     .overview-box strong, .overview-box em, .overview-box b, .overview-box i,
     .overview-box span, .overview-box li, .overview-box a { color: #111827 !important; }
     /* Tiny model info note */
-    .model-note { font-size: 0.85rem !important; color: #1e3a8a !important; display: block; text-align: center !important; margin-top: -5px !important; }
-    .overview-box .model-note { color: #1e3a8a !important; }
+    .model-note { font-size: 0.8rem !important; color: #0d1b2a !important; display: block; text-align: center !important; margin-top: -5px !important; }
+    /* Ensure override inside hero where base color is white */
+    .hero .model-note, .hero .model-note p { font-size: 0.8rem !important; color: #0d1b2a !important; }
+    .overview-box .model-note { color: #0d1b2a !important; }
     .stats-line {font-size: 1rem !important; color: #6b7280 !important; margin: 0.5rem 0 !important;}
 """
 
