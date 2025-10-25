@@ -242,9 +242,19 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
         scaler = StandardScaler()  # type: ignore
         df_scaled = scaler.fit_transform(np.array(df_filled))  # type: ignore
 
-        # Use t-SNE for 2D projection
-        tsne = TSNE(n_components=2, random_state=42, perplexity=min(5, len(df_filled) - 1))  # type: ignore
+        # Use t-SNE for 2D projection (make it more deterministic across envs)
+        tsne = TSNE(
+            n_components=2,
+            random_state=42,
+            perplexity=min(5, len(df_filled) - 1),
+            init="pca",            # deterministic init
+            learning_rate="auto",  # stable default across versions
+            max_iter=1000,          # fixed iteration budget (n_iter -> max_iter in newer sklearn)
+        )  # type: ignore
         coords_2d = tsne.fit_transform(df_scaled)  # type: ignore
+
+        # Canonicalize location/scale so minor numeric drift doesn't change axes scale wildly
+        coords_2d = (coords_2d - coords_2d.mean(axis=0)) / (coords_2d.std(axis=0) + 1e-9)
 
         # Create result dataframe
         voter_names = df_sorted['Email address'].str.split('@').str[0].tolist()
