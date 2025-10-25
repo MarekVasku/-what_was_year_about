@@ -387,17 +387,27 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                     if email_prefix and email_prefix.strip():
                         subject += f" | from: {email_prefix.strip()}"
                     
+                    # Send as form data instead of JSON for better Make.com compatibility
                     payload = {
                         "to": receiver_email,
                         "subject": subject,
-                        "body": body
+                        "body": body,
+                        "text": body  # Add duplicate field for compatibility
                     }
+                    
+                    # Try both JSON and form data formats
                     response = requests.post(webhook_url, json=payload, timeout=10)
                     if response.status_code == 200 or response.status_code == 201:
                         email_sent = True
                         email_method = "webhook"
                     else:
-                        error_msg = f"Webhook returned status {response.status_code}"
+                        # Try form data if JSON failed
+                        response = requests.post(webhook_url, data=payload, timeout=10)
+                        if response.status_code == 200 or response.status_code == 201:
+                            email_sent = True
+                            email_method = "webhook"
+                        else:
+                            error_msg = f"Webhook returned status {response.status_code}"
                 except Exception as e:
                     error_msg = f"Webhook error: {str(e)}"
 
