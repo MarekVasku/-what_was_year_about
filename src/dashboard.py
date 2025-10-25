@@ -161,7 +161,7 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
 
                 recommendations_display = "\n\n".join(rec_lines)
                 recommendations_display += (
-                    f"\n\n<span class='model-note'>Generated with <code>{MODEL_JSON}</code> on Groq</span>"
+                    f"\n\n<span class='model-note-white'>Generated with <code>{MODEL_JSON}</code> on Groq</span>"
                 )
         except Exception as e:
             recommendations_display = f"_Could not generate recommendations: {str(e)}_"

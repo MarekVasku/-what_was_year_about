@@ -42,8 +42,10 @@ CUSTOM_CSS = """
     .overview-box .model-note { color: #0d1b2a !important; }
     .stats-line {font-size: 1rem !important; color: #6b7280 !important; margin: 0.5rem 0 !important;}
     /* Subtle text that adapts to backgrounds */
-    .subtle-info { font-size: 0.85rem !important; line-height: 1.4 !important; color: #d1d5db !important; font-style: italic !important; }
-    .thank-you-note { text-align: center !important; font-size: 0.9rem !important; color: #d1d5db !important; line-height: 1.6 !important; }
+    .subtle-info { font-size: 0.85rem !important; line-height: 1.4 !important; color: #93c5fd !important; font-style: italic !important; }
+    .thank-you-note { text-align: center !important; font-size: 0.9rem !important; color: #93c5fd !important; line-height: 1.6 !important; }
+    /* White text for model notes on dark backgrounds (recommendations section) */
+    .model-note-white { font-size: 0.8rem !important; color: #ffffff !important; display: block; text-align: center !important; margin-top: 0.5rem !important; opacity: 0.8; }
 """
 
 with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) as demo:
@@ -182,10 +184,11 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     agreeable_plot = gr.Plot()
 
     gr.Markdown("## Clustering Analysis")
-    gr.Markdown(
+    gr.HTML(
+        "<p style='font-size: 0.85rem; line-height: 1.4; color: #6b7280; font-style: italic; margin-bottom: 1rem;'>"
         "Clustering: K‑Means on standardized voter rating vectors. "
-        "The 2D map is a t‑SNE visualization; closer dots ≈ more similar taste.",
-        elem_classes=["subtle-info"]
+        "The 2D map is a t‑SNE visualization; closer dots ≈ more similar taste."
+        "</p>"
     )
 
     gr.Markdown("### 2D Taste Map")
@@ -374,12 +377,13 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
     # Thank you note
     gr.Markdown("---")
-    gr.Markdown(
+    gr.HTML(
+        "<p style='text-align: center; font-size: 0.9rem; color: #6b7280; line-height: 1.6;'>"
         "Thanks all for voting, listening, discussing, and generally giving a damn about music. "
         "I know I am obsessed with charts, music and data. Thanks for sharing this with me. Hope this is somehow useful or interesting. "
         "Let's just all share passion for music, talk about it and keep discovering. Here's to some great music ahead! "
-        "See you next year. - MV",
-        elem_classes=["thank-you-note"]
+        "See you next year. - MV"
+        "</p>"
     )
     gr.Markdown("---")
 
