@@ -22,7 +22,7 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
         marker=dict(
             color=df_plot["Average Score"],
             colorscale='Viridis',
-            line=dict(color='rgba(0,0,0,0.2)', width=1),
+            line=dict(width=0),  # no border
             showscale=True,
             colorbar=dict(title=dict(text="Score", font=dict(size=12)), thickness=12, len=0.7)
         ),
@@ -39,8 +39,8 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
             orientation='h',
             name='Your Score',
             marker=dict(
-                color='rgba(255, 99, 71, 0.7)',
-                line=dict(color='rgba(255, 99, 71, 1)', width=1)
+                color='rgba(255, 99, 71, 0.8)',
+                line=dict(width=0)  # no border
             ),
             hovertemplate='<b>%{y}</b><br>Your Score: %{x:.2f}<extra></extra>',
             opacity=0.6
@@ -55,7 +55,7 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
         },
         xaxis_title="Average Score",
         yaxis_title="",
-        xaxis=dict(range=[0, 10.5], showgrid=True, gridcolor='rgba(0,0,0,0.05)'),
+        xaxis=dict(range=[0, 10.5], showgrid=True, gridcolor='rgba(0,0,0,0.06)'),
         yaxis=dict(showgrid=False),
         plot_bgcolor='#fff',
         paper_bgcolor='white',
@@ -91,7 +91,7 @@ def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
         marker=dict(
             color=df_plot['Your Score'],
             colorscale='Viridis',
-            line=dict(color='rgba(0,0,0,0.2)', width=1),
+            line=dict(width=0),  # no border
             showscale=True,
             colorbar=dict(title=dict(text="Your Score", font=dict(size=12)), thickness=12, len=0.7)
         ),
@@ -107,7 +107,7 @@ def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
         },
         xaxis_title="Your Score",
         yaxis_title="",
-        xaxis=dict(range=[0, 10.5], showgrid=True, gridcolor='rgba(0,0,0,0.05)'),
+        xaxis=dict(range=[0, 10.5], showgrid=True, gridcolor='rgba(0,0,0,0.06)'),
         yaxis=dict(showgrid=False),
         plot_bgcolor='#fff',
         paper_bgcolor='white',
@@ -134,7 +134,7 @@ def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
         marker=dict(
             color=top10["Average Score"],
             colorscale='Viridis',
-            line=dict(color='rgba(0,0,0,0.2)', width=1),
+            line=dict(width=0),
             showscale=False
         ),
         text=None,
@@ -173,7 +173,7 @@ def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
                'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}},
         plot_bgcolor='#fff', paper_bgcolor='white',
         xaxis=dict(range=[0, x_max], title="Average Score",
-                   showgrid=True, gridcolor='rgba(0,0,0,0.05)'),
+                   showgrid=True, gridcolor='rgba(0,0,0,0.06)'),
         yaxis=dict(showgrid=False, title=""),
         height=500,
         margin=dict(l=550, r=100, t=140, b=60),
@@ -194,7 +194,7 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
         nbinsx=20,
         marker=dict(
             color='#667eea',
-            line=dict(color='rgba(255,255,255,0.3)', width=0.5)
+            line=dict(width=0)
         ),
         hovertemplate='Score Range: %{x}<br>Songs: %{y}<extra></extra>',
         name='Songs'
@@ -225,14 +225,14 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
         xaxis=dict(
             title="Average Score",
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=False
         ),
         yaxis=dict(
             title="Number of Songs/Votes",
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=False
         ),
@@ -267,7 +267,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
         nbinsx=10,
         marker=dict(
             color='#a78bfa',
-            line=dict(color='rgba(255,255,255,0.3)', width=0.5)
+            line=dict(width=0)
         ),
         hovertemplate='Score: %{x}<br>Count: %{y}<extra></extra>',
         name='Individual Votes'
@@ -299,14 +299,14 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
             title="Vote Score (1-10)",
             range=[0, 11],
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=False
         ),
         yaxis=dict(
             title="Number of Songs/Votes",
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=False
         ),
@@ -360,7 +360,7 @@ def make_podium_chart(avg_scores: pd.DataFrame) -> go.Figure:
         y=values,
         marker=dict(
             color=colors,
-            line=dict(color='rgba(255,255,255,0.5)', width=1)
+            line=dict(width=0)
         ),
         text=texts,
         textposition='outside',
@@ -391,7 +391,7 @@ def make_podium_chart(avg_scores: pd.DataFrame) -> go.Figure:
             range=[y_min, y_max],
             title="Average Score",
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=False
         ),
@@ -429,7 +429,7 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
         orientation='h',
         marker=dict(
             color=colors,
-            line=dict(color='rgba(255,255,255,0.3)', width=0.5)
+            line=dict(width=0)
         ),
         text=[f"{d:+.1f}" for d in disagreements['Difference']],
         textposition='outside',
@@ -449,7 +449,7 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
         xaxis=dict(
             title="Difference from Average (Your Score - Average Score)",
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=False
         ),
@@ -493,7 +493,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
         orientation='h',
         marker=dict(
             color=['#FFD700' if song in in_both else '#667eea' for song in community_top10['Song']],
-            line=dict(color='rgba(255,255,255,0.3)', width=0.5)
+            line=dict(width=0)
         ),
         text=[f"{score:.1f}" for score in community_top10['Average Score']],
         textposition='inside',
@@ -510,7 +510,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
         orientation='h',
         marker=dict(
             color=['#FFD700' if song in in_both else '#e74c3c' for song in user_top10['Song']],
-            line=dict(color='rgba(255,255,255,0.3)', width=0.5)
+            line=dict(width=0)
         ),
         text=[f"{score:.1f}" for score in user_top10['Your Score']],
         textposition='inside',
@@ -544,7 +544,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
             title="← Community Score | Your Score →",
             range=[-11, 11],
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=True,
             zerolinewidth=2,
@@ -655,7 +655,7 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
         marker=dict(
             color=top_controversial['Std Dev'],
             colorscale='OrRd',
-            line=dict(color='rgba(255,255,255,0.3)', width=0.5),
+            line=dict(width=0),
             showscale=True,
             colorbar=dict(
                 title=dict(
@@ -686,7 +686,7 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
         xaxis=dict(
             title="Standard Deviation of Scores",
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             gridwidth=1,
             zeroline=False
         ),
@@ -732,7 +732,7 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
         marker=dict(
             color=inverted_colors,
             colorscale='Greens',
-            line=dict(color='rgba(0,0,0,0.2)', width=1),
+            line=dict(width=0),
             showscale=True,
             colorbar=dict(
                 title=dict(
@@ -771,6 +771,8 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
         margin=dict(l=250, r=100, t=80, b=60),
         showlegend=False,
     )
+    # Ensure consistent grid styling
+    fig.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False)
     
     return fig
 
@@ -876,7 +878,7 @@ def make_taste_similarity_chart(similarity_df: pd.DataFrame | None) -> go.Figure
         y=top_similar['Voter'],
         x=top_similar['Similarity Score'],
         orientation='h',
-        marker=dict(color=colors, line=dict(color='rgba(0,0,0,0.2)', width=1)),
+        marker=dict(color=colors, line=dict(width=0)),
         text=[f"{score:.2f}" for score in top_similar['Similarity Score']],
         textposition='outside',
         hovertemplate='<b>%{y}</b><br>Similarity: %{x:.2f}<br>Songs in Common: %{customdata}<extra></extra>',
@@ -891,7 +893,7 @@ def make_taste_similarity_chart(similarity_df: pd.DataFrame | None) -> go.Figure
             'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis_title="Similarity Score (Correlation)",
-        xaxis=dict(range=[0, 1]),
+        xaxis=dict(range=[0, 1], showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False),
         yaxis_title="",
         plot_bgcolor='#fafafa',
         paper_bgcolor='white',
@@ -926,7 +928,7 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             marker=dict(
                 size=10,
                 color='#4A90E2',
-                line=dict(color='white', width=2)
+                line=dict(color='rgba(0,0,0,0.25)', width=2)
             ),
             name='Other Voters',
             hovertemplate='<b>%{customdata}</b><br>X: %{x:.2f}<br>Y: %{y:.2f}<extra></extra>',
@@ -957,24 +959,24 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             'text': "2D Taste Map",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#e5e7eb', 'family': 'Inter'}
+            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
         },
         xaxis=dict(
-            title=dict(text="Taste Dimension 1", font=dict(color='#cbd5e1')),
+            title=dict(text="Taste Dimension 1", font=dict(color='#2c3e50')),
             showgrid=True,
-            gridcolor='rgba(255,255,255,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             zeroline=False,
-            color='#cbd5e1',
+            color='#2c3e50',
         ),
         yaxis=dict(
-            title=dict(text="Taste Dimension 2", font=dict(color='#cbd5e1')),
+            title=dict(text="Taste Dimension 2", font=dict(color='#2c3e50')),
             showgrid=True,
-            gridcolor='rgba(255,255,255,0.08)',
+            gridcolor='rgba(0,0,0,0.06)',
             zeroline=False,
-            color='#cbd5e1',
+            color='#2c3e50',
         ),
-        plot_bgcolor='#0f172a',
-        paper_bgcolor='#0b1220',
+        plot_bgcolor='#ffffff',
+        paper_bgcolor='#ffffff',
         height=400,
         margin=dict(l=80, r=80, t=80, b=60),
         hovermode='closest',
@@ -985,7 +987,7 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             y=1.02,
             xanchor='center',
             x=0.5,
-            font=dict(color='#e5e7eb')
+            font=dict(color='#2c3e50')
         )
     )
     
@@ -1018,7 +1020,7 @@ def make_song_clustering_chart(song_clusters_df: pd.DataFrame | None, avg_scores
             name=cluster_name,
             marker=dict(
                 color=cluster_colors[cluster_name],
-                line=dict(color='rgba(0,0,0,0.2)', width=1)
+                line=dict(width=0)
             ),
             text=[f"{score:.1f}" for score in cluster_data['Average Score']],
             textposition='outside',
@@ -1048,6 +1050,8 @@ def make_song_clustering_chart(song_clusters_df: pd.DataFrame | None, avg_scores
             x=1.02
         )
     )
+    # Consistent grid styling for bars
+    fig.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False)
     
     return fig
 
@@ -1073,7 +1077,7 @@ def make_voter_clustering_chart(voter_clusters_df: pd.DataFrame | None) -> go.Fi
         orientation='h',
         marker=dict(
             color=colors,
-            line=dict(color='rgba(0,0,0,0.2)', width=1)
+            line=dict(width=0)
         ),
         text=cluster_counts['Count'],
         textposition='outside',
@@ -1095,5 +1099,6 @@ def make_voter_clustering_chart(voter_clusters_df: pd.DataFrame | None) -> go.Fi
         height=max(400, len(cluster_counts) * 60),
         margin=dict(l=200, r=100, t=80, b=60),
     )
+    fig.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False)
     
     return fig
