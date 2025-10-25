@@ -378,6 +378,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
             email_sent = False
             email_method = None
+            error_msg = None
 
             # Try webhook first (works in Hugging Face Spaces)
             if webhook_url:
@@ -392,11 +393,13 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                         "body": body
                     }
                     response = requests.post(webhook_url, json=payload, timeout=10)
-                    if response.status_code == 200:
+                    if response.status_code == 200 or response.status_code == 201:
                         email_sent = True
                         email_method = "webhook"
-                except Exception:
-                    pass
+                    else:
+                        error_msg = f"Webhook returned status {response.status_code}"
+                except Exception as e:
+                    error_msg = f"Webhook error: {str(e)}"
 
             # Try SMTP if webhook didn't work (for local testing)
             if not email_sent and sender_email and sender_password:
@@ -414,15 +417,19 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                         server.send_message(msg)
                     email_sent = True
                     email_method = "SMTP"
-                except Exception:
-                    pass
+                except Exception as e:
+                    if not error_msg:
+                        error_msg = f"SMTP error: {str(e)}"
 
             # Build response message
             if email_sent:
                 message = f"✅ **Thank you!** Your feedback has been sent via {email_method}.\n\n"
             else:
                 message = "✅ **Thank you!** Your feedback has been saved.\n\n"
-                message += "ℹ️ Email notification unavailable (configure WEBHOOK_URL for Hugging Face or SMTP for local).\n\n"
+                if error_msg:
+                    message += f"ℹ️ {error_msg}\n\n"
+                elif not webhook_url and not (sender_email and sender_password):
+                    message += "ℹ️ Email notification unavailable (configure WEBHOOK_URL for Hugging Face or SMTP for local).\n\n"
 
             if songs.strip():
                 message += f"**Songs suggested:** {len(songs.strip().splitlines())} lines\n"
