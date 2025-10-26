@@ -12,12 +12,13 @@ Environment (optional):
 Safe to run locally: `python src/app_gradio.py`
 """
 
-import gradio as gr
-from gradio import themes
 from pathlib import Path
-from dashboard import create_dashboard
-import os
+
+import gradio as gr
 from dotenv import load_dotenv
+from gradio import themes
+
+from dashboard import create_dashboard
 
 # Load environment variables from .env file (for local development)
 load_dotenv()
@@ -378,6 +379,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             from datetime import datetime
             from email.mime.multipart import MIMEMultipart
             from email.mime.text import MIMEText
+
             import requests
 
             # Email configuration - get from environment variables
@@ -423,7 +425,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                     subject = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
                     if email_prefix and email_prefix.strip():
                         subject += f" | from: {email_prefix.strip()}"
-                    
+
                     # Webhook payload: keep it minimal and structured (no duplicate fields)
                     payload = {
                         "to": receiver_email,
@@ -434,7 +436,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                         "songs_raw": songs.strip() if songs and songs.strip() else "",
                         "ideas_raw": ideas.strip() if ideas and ideas.strip() else "",
                     }
-                    
+
                     # Try both JSON and form data formats
                     response = requests.post(webhook_url, json=payload, timeout=10)
                     if response.status_code == 200 or response.status_code == 201:
@@ -460,7 +462,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                     subject_suffix = f" | from: {email_prefix.strip()}" if email_prefix and email_prefix.strip() else ""
                     msg['Subject'] = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}{subject_suffix}"
                     msg.attach(MIMEText(body, 'plain'))
-                    
+
                     with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
                         server.starttls()
                         server.login(sender_email, sender_password)
@@ -485,7 +487,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
                 message += f"**Songs suggested:** {len(songs.strip().splitlines())} lines\n"
             if ideas.strip():
                 message += f"**Ideas shared:** {len(ideas.strip().splitlines())} lines\n"
-            
+
             if not file_saved:
                 message += "\n⚠️ Warning: Could not save to feedback log file."
 

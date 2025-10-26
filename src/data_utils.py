@@ -180,7 +180,7 @@ def get_data_cached(user_email_prefix: str = "") -> tuple[
         return None, pd.DataFrame(), 0, 0.0, 0, str(e), None
 
 
- 
+
 
 
 def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") -> pd.DataFrame:
@@ -243,10 +243,10 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
         return pd.DataFrame(columns=['Voter', 'X', 'Y', 'Is_Current_User'])
 
 
- 
 
 
- 
 
 
- 
+
+
+

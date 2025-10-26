@@ -25,8 +25,9 @@ def fetch_df() -> pd.DataFrame:
     for platforms like Hugging Face Spaces. Falls back to credentials.json file
     in the project root if the env var is not provided or parsing fails.
     """
-    import gspread
     import json
+
+    import gspread
 
     gc = None
     creds_json = os.environ.get("GOOGLE_SHEETS_CREDENTIALS")
@@ -135,7 +136,7 @@ Tone guide: Think "your music-obsessed friend who loves to playfully debate tast
     return analysis
 
 def call_groq(
-        
+
     prompt: str,
     model: str | None = None,
     *,

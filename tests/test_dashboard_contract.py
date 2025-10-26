@@ -1,17 +1,18 @@
 import sys
 from pathlib import Path
 
+import pandas as pd
+import plotly.graph_objects as go
+
+import dashboard
+
 # Add src/ to path so absolute imports work
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import types
-import pandas as pd
-import plotly.graph_objects as go
 
-import dashboard
 
 
 def _fake_data_tuple():

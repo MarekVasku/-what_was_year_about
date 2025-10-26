@@ -7,9 +7,9 @@ Conventions:
     business logic: inputs should already be precomputed data frames.
 """
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import numpy as np
 
 
 def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = None) -> go.Figure:
@@ -20,11 +20,11 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
     """
     if avg_scores.empty:
         return go.Figure()
-    
+
     df_plot = avg_scores.sort_values("Average Score", ascending=True)
-    
+
     fig = go.Figure()
-    
+
     # Add average scores
     fig.add_trace(go.Bar(
         x=df_plot["Average Score"],
@@ -41,7 +41,7 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
         hovertemplate='<b>%{y}</b><br>Rank: #%{customdata}<br>Average Score: %{x:.2f}<extra></extra>',
         customdata=df_plot['Rank']
     ))
-    
+
     # Add user scores if available
     if user_votes is not None and not user_votes.empty:
         user_scores = pd.merge(df_plot[['Song']], user_votes, on='Song', how='left')
@@ -57,7 +57,7 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
             hovertemplate='<b>%{y}</b><br>Your Score: %{x:.2f}<extra></extra>',
             opacity=0.6
         ))
-    
+
     fig.update_layout(
         title={
             'text': "Complete Song Ranking",
@@ -83,7 +83,7 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
             x=0.5
         )
     )
-    
+
     return fig
 
 
@@ -201,9 +201,9 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
     """Histogram of average scores with a vertical line at the overall mean."""
     if avg_scores.empty:
         return go.Figure()
-    
+
     fig = go.Figure()
-    
+
     fig.add_trace(go.Histogram(
         x=avg_scores["Average Score"],
         nbinsx=20,
@@ -214,7 +214,7 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
         hovertemplate='Score Range: %{x}<br>Songs: %{y}<extra></extra>',
         name='Songs'
     ))
-    
+
     # Add average line
     avg_score = avg_scores["Average Score"].mean()
     fig.add_vline(
@@ -226,7 +226,7 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
         annotation_position="top right",
         annotation=dict(font=dict(family='Inter', size=11, color='#e74c3c'))
     )
-    
+
     fig.update_layout(
         title={
             'text': "Average Score Distribution",
@@ -256,7 +256,7 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
         showlegend=False,
         bargap=0.15
     )
-    
+
     return fig
 
 
@@ -264,19 +264,19 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
     """Histogram of all individual votes (per-song ratings), not averages."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
-    
+
     song_cols = df_raw.columns[2:]
     all_votes = []
-    
+
     for col in song_cols:
         votes = pd.to_numeric(df_raw[col], errors='coerce').dropna()
         all_votes.extend(votes.tolist())
-    
+
     if not all_votes:
         return go.Figure()
-    
+
     fig = go.Figure()
-    
+
     fig.add_trace(go.Histogram(
         x=all_votes,
         nbinsx=10,
@@ -287,7 +287,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
         hovertemplate='Score: %{x}<br>Count: %{y}<extra></extra>',
         name='Individual Votes'
     ))
-    
+
     # Add average line
     avg_vote = np.mean(all_votes)
     fig.add_vline(
@@ -299,7 +299,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
         annotation_position="top right",
         annotation=dict(font=dict(family='Inter', size=11, color='#e74c3c'))
     )
-    
+
     fig.update_layout(
         title={
             'text': "All Individual Votes Distribution",
@@ -330,7 +330,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
         showlegend=False,
         bargap=0.15
     )
-    
+
     return fig
 
 
@@ -424,19 +424,19 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
     """Songs where the user differed most from average (top 10 overrated/underrated)."""
     if comparison is None or comparison.empty:
         return go.Figure()
-    
+
     # Get top 10 most overrated (positive difference) and underrated (negative difference)
     sorted_comp = comparison.sort_values("Difference", ascending=False)
     top_overrated = sorted_comp.head(10)
     top_underrated = sorted_comp.tail(10)
-    
+
     # Combine and sort by absolute difference
     disagreements = pd.concat([top_overrated, top_underrated]).drop_duplicates()
     disagreements = disagreements.sort_values("Difference", ascending=True)
-    
+
     # Color coding: red for underrated, green for overrated
     colors = ['#e74c3c' if diff < 0 else '#2ecc71' for diff in disagreements['Difference']]
-    
+
     fig = go.Figure()
     fig.add_trace(go.Bar(
         y=disagreements['Song'],
@@ -452,7 +452,7 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
         hovertemplate='<b>%{y}</b><br>Your Score: %{customdata[0]:.1f}<br>Average: %{customdata[1]:.1f}<br>Difference: %{x:+.1f}<extra></extra>',
         customdata=disagreements[['Your Score', 'Average Score']].values
     ))
-    
+
     fig.update_layout(
         title={
             'text': "Your Biggest Disagreements with the Group",
@@ -475,10 +475,10 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
         margin=dict(l=320, r=30, t=90, b=60),
         showlegend=False,
     )
-    
+
     # Add vertical line at 0
     fig.add_vline(x=0, line_dash="dash", line_color="#95a5a6", line_width=1.5, opacity=0.6)
-    
+
     return fig
 
 
@@ -486,20 +486,20 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
     """Side-by-side bars: user's top 10 (right) vs community's top 10 (left)."""
     if comparison is None or comparison.empty:
         return go.Figure()
-    
+
     # Get community top 10
     community_top10 = avg_scores.head(10).copy()
     community_top10['Type'] = 'Community'
-    
+
     # Get user's top 10
     user_top10 = comparison.nlargest(10, 'Your Score').copy()
     user_top10['Type'] = 'Your Top 10'
-    
+
     # Mark songs that appear in both
     in_both = set(community_top10['Song']) & set(user_top10['Song'])
-    
+
     fig = go.Figure()
-    
+
     # Community top 10 (left side, negative x)
     fig.add_trace(go.Bar(
         name='Community Top 10',
@@ -516,7 +516,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
         hovertemplate='<b>%{y}</b><br>Average Score: %{customdata:.2f}<extra></extra>',
         customdata=community_top10['Average Score']
     ))
-    
+
     # User top 10 (right side, positive x)
     fig.add_trace(go.Bar(
         name='Your Top 10',
@@ -532,7 +532,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
         textfont=dict(family='Inter', size=11, color='white'),
         hovertemplate='<b>%{y}</b><br>Your Score: %{x:.2f}<extra></extra>'
     ))
-    
+
     # Add invisible trace for "In Both" legend entry
     fig.add_trace(go.Bar(
         name='In Both Top 10s',
@@ -542,7 +542,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
         showlegend=True,
         hoverinfo='skip'
     ))
-    
+
     fig.update_layout(
         title={
             'text': "Your Top 10 vs Community Top 10",
@@ -582,7 +582,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
             font=dict(family='Inter', size=12)
         )
     )
-    
+
     return fig
 
 
@@ -590,18 +590,18 @@ def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> 
     """Heatmap of all voter-by-song ratings (anonymized), highlights current user if set."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
-    
+
     # Get song columns and voter names
     song_cols = df_raw.columns[2:]
     voters_original = df_raw['Email address'].str.split('@').str[0].tolist()
-    
+
     # Filter out songs with no votes (all NaN or 0)
     df_numeric = df_raw[song_cols].apply(pd.to_numeric, errors='coerce')
     songs_with_votes = df_numeric.columns[(df_numeric > 0).any()]
-    
+
     if len(songs_with_votes) == 0:
         return go.Figure()
-    
+
     # Anonymize voters except current user
     voters = []
     for i, voter in enumerate(voters_original):
@@ -609,11 +609,11 @@ def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> 
             voters.append(voter)  # Keep current user's name
         else:
             voters.append(f"Voter {i+1}")  # Anonymize others
-    
+
     # Create matrix of scores (only for songs with votes)
     score_matrix = df_numeric[songs_with_votes].values
     song_cols = songs_with_votes
-    
+
     fig = go.Figure(data=go.Heatmap(
         z=score_matrix,
         x=song_cols,
@@ -624,7 +624,7 @@ def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> 
         hovertemplate='Voter: %{y}<br>Song: %{x}<br>Score: %{z}<extra></extra>',
         colorbar=dict(title=dict(text="Score", font=dict(size=12)))
     ))
-    
+
     fig.update_layout(
         title={
             'text': "All Votes Heatmap",
@@ -639,7 +639,7 @@ def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> 
         height=max(500, len(voters) * 30),
         margin=dict(l=150, r=100, t=80, b=200),
     )
-    
+
     return fig
 
 
@@ -647,21 +647,21 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
     """Top 10 most polarizing songs via highest per-song standard deviation."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
-    
+
     song_cols = df_raw.columns[2:]
     df_numeric = df_raw[song_cols].apply(pd.to_numeric, errors='coerce')
-    
+
     # Calculate standard deviation for each song
     std_devs = df_numeric.std().reset_index()
     std_devs.columns = ['Song', 'Std Dev']
-    
+
     # Merge with average scores
     controversy = pd.merge(std_devs, avg_scores[['Song', 'Average Score']], on='Song')
     controversy = controversy.sort_values('Std Dev', ascending=False)
-    
+
     # Top 10 most controversial
     top_controversial = controversy.head(10).sort_values('Std Dev', ascending=True)
-    
+
     fig = go.Figure()
     fig.add_trace(go.Bar(
         y=top_controversial['Song'],
@@ -689,7 +689,7 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
         hovertemplate='<b>%{y}</b><br>Average: %{customdata:.2f}<br>Std Dev: %{x:.2f}<br>(Higher = More Polarizing)<extra></extra>',
         customdata=top_controversial['Average Score']
     ))
-    
+
     fig.update_layout(
         title={
             'text': "Most Polarizing Songs (Highest Vote Variance)",
@@ -712,7 +712,7 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
         margin=dict(l=250, r=100, t=90, b=60),
         showlegend=False,
     )
-    
+
     return fig
 
 
@@ -720,25 +720,25 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
     """Top 10 most agreeable songs via lowest per-song standard deviation."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
-    
+
     song_cols = df_raw.columns[2:]
     df_numeric = df_raw[song_cols].apply(pd.to_numeric, errors='coerce')
-    
+
     # Calculate standard deviation for each song
     std_devs = df_numeric.std().reset_index()
     std_devs.columns = ['Song', 'Std Dev']
-    
+
     # Merge with average scores
     agreement = pd.merge(std_devs, avg_scores[['Song', 'Average Score']], on='Song')
     agreement = agreement.sort_values('Std Dev', ascending=True)
-    
+
     # Top 10 most agreeable (lowest std dev at top)
     top_agreeable = agreement.head(10).sort_values('Std Dev', ascending=False)
-    
+
     # Invert color values so smallest std dev gets darkest color
     max_std = top_agreeable['Std Dev'].max()
     inverted_colors = max_std - top_agreeable['Std Dev']
-    
+
     fig = go.Figure()
     fig.add_trace(go.Bar(
         y=top_agreeable['Song'],
@@ -760,7 +760,7 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
                 bordercolor='rgba(0,0,0,0.1)',
                 borderwidth=1,
                 tickvals=[0, (max_std - top_agreeable['Std Dev'].min()) / 2, max_std - top_agreeable['Std Dev'].min()],
-                ticktext=[f"{top_agreeable['Std Dev'].max():.2f}", 
+                ticktext=[f"{top_agreeable['Std Dev'].max():.2f}",
                          f"{(top_agreeable['Std Dev'].max() + top_agreeable['Std Dev'].min()) / 2:.2f}",
                          f"{top_agreeable['Std Dev'].min():.2f}"]
             )
@@ -770,7 +770,7 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
         hovertemplate='<b>%{y}</b><br>Average: %{customdata:.2f}<br>Std Dev: %{x:.2f}<br>(Lower = More Agreement)<extra></extra>',
         customdata=top_agreeable['Average Score']
     ))
-    
+
     fig.update_layout(
         title={
             'text': "Most Agreeable Songs (Lowest Vote Variance)",
@@ -788,7 +788,7 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
     )
     # Ensure consistent grid styling
     fig.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False)
-    
+
     return fig
 
 
@@ -796,22 +796,22 @@ def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFra
     """Compare user's vote distribution vs community to infer harsh/generous patterns."""
     if comparison is None or comparison.empty or df_raw is None or df_raw.empty:
         return go.Figure()
-    
+
     # Get all community votes
     song_cols = df_raw.columns[2:]
     all_votes = []
     for col in song_cols:
         votes = pd.to_numeric(df_raw[col], errors='coerce').dropna()
         all_votes.extend(votes.tolist())
-    
+
     # Get user votes
     user_votes = comparison['Your Score'].dropna().tolist()
-    
+
     if not user_votes or not all_votes:
         return go.Figure()
-    
+
     fig = go.Figure()
-    
+
     # Community distribution
     fig.add_trace(go.Histogram(
         x=all_votes,
@@ -821,7 +821,7 @@ def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFra
         marker=dict(color='#4A90E2'),
         histnorm='probability'
     ))
-    
+
     # User distribution
     fig.add_trace(go.Histogram(
         x=user_votes,
@@ -831,14 +831,14 @@ def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFra
         marker=dict(color='#E74C3C'),
         histnorm='probability'
     ))
-    
+
     # Calculate stats
     user_avg = np.mean(user_votes)
     community_avg = np.mean(all_votes)
     diff = user_avg - community_avg
-    
+
     rating_type = "Generous Rater" if diff > 0.5 else "Harsh Critic" if diff < -0.5 else "Balanced Rater"
-    
+
     fig.update_layout(
         title={
             'text': f"Your Voting Pattern: {rating_type}",
@@ -870,27 +870,27 @@ def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFra
             x=0.5
         )
     )
-    
+
     return fig
 
 
- 
+
 
 
 def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
     """Interactive 2D scatter of voter taste positions (anonymized and highlighted for current user)."""
     if taste_map_df is None or taste_map_df.empty:
         return go.Figure()
-    
+
     # Separate current user from others and anonymize
     others = taste_map_df[~taste_map_df['Is_Current_User']].copy()
     current_user = taste_map_df[taste_map_df['Is_Current_User']]
-    
+
     # Anonymize other voters
     others['Voter'] = [f"Voter {i+1}" for i in range(len(others))]
-    
+
     fig = go.Figure()
-    
+
     # Add other voters (without text labels)
     if not others.empty:
         fig.add_trace(go.Scatter(
@@ -906,7 +906,7 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             hovertemplate='<b>%{customdata}</b><br>X: %{x:.2f}<br>Y: %{y:.2f}<extra></extra>',
             customdata=others['Voter']
         ))
-    
+
     # Add current user (highlighted)
     if not current_user.empty:
         fig.add_trace(go.Scatter(
@@ -925,7 +925,7 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             name='You',
             hovertemplate='<b>%{text} (You)</b><br>X: %{x:.2f}<br>Y: %{y:.2f}<extra></extra>'
         ))
-    
+
     fig.update_layout(
         title={
             'text': "2D Taste Map",
@@ -962,11 +962,11 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
             font=dict(color='#2c3e50')
         )
     )
-    
+
     return fig
 
 
- 
 
 
- 
+
+

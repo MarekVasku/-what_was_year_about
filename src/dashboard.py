@@ -209,4 +209,4 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         taste_map_chart,
         recommendations_display,
     )
- 
+
