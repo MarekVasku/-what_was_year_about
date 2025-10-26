@@ -111,8 +111,8 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
 
 ### Top 3
 
-{top3_lines[0]}  
-{top3_lines[1]}  
+{top3_lines[0]}
+{top3_lines[1]}
 {top3_lines[2]}
 """
 
@@ -146,7 +146,6 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
     taste_map_chart = make_2d_taste_map_chart(create_2d_taste_map(df_raw, user_email_prefix))
 
     # User comparison section and LLM insight
-    user_comparison = comparison
     recommendations_display = ""
 
     if comparison is not None and not comparison.empty:

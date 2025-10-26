@@ -76,7 +76,7 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
     overall_top = comparison_df.nlargest(3, 'Average Score')
 
     # Find general voting pattern
-    avg_difference = comparison_df['Difference'].mean()
+    comparison_df['Difference'].mean()
     higher_count = (comparison_df['Difference'] > 1).sum()
     lower_count = (comparison_df['Difference'] < -1).sum()
 
@@ -179,12 +179,12 @@ def get_user_voting_insight(comparison_df: pd.DataFrame) -> str:
 
 def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) -> list[dict[str, str]]:
     """Generate artist/genre recommendations based on user's top 5 and bottom 5 songs.
-    
+
     Args:
         top5: List of user's top 5 rated songs
-        bottom5: List of user's bottom 5 rated songs  
+        bottom5: List of user's bottom 5 rated songs
         n: Number of recommendations to generate (default 5)
-        
+
     Returns:
         List of dicts with keys: 'song' (used for artist/genre), 'artist' (empty), 'reason'
         Returns empty list on error

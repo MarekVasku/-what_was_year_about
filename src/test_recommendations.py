@@ -34,7 +34,7 @@ class TestGenerateRecommendations:
     def test_json_wrapped_in_markdown(self):
         """Test extraction of JSON when wrapped in markdown code blocks."""
         mock_response = '''Here are my recommendations:
-        
+
 ```json
 [
     {"song": "ODESZA", "artist": "", "reason": "Your taste for layered soundscapes matches their production style."}

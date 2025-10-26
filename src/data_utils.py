@@ -69,11 +69,11 @@ def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.Dat
 
 def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataFrame, str | None]:
     """Get votes for a specific user by their email prefix.
-    
+
     Args:
         df: Raw dataframe with votes
         email_prefix: User's email prefix (before @)
-        
+
     Returns:
         tuple[user's votes as DataFrame, error message or None]
     """

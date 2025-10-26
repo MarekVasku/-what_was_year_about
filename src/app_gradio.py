@@ -46,7 +46,7 @@ WARNING_HTML = (
 
 CUSTOM_CSS = """
     .gradio-container {max-width: 1400px !important; margin: 0 auto !important; padding: 0 1rem !important;}
-    .hero {text-align: center; padding: 2rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    .hero {text-align: center; padding: 2rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
            border-radius: 12px; margin-bottom: 2rem; color: white;}
     .hero h1 {color: white !important; font-size: 2.5rem; margin-bottom: 0.5rem;}
     .hero p {font-size: 1.1rem; opacity: 0.9;}
@@ -73,7 +73,6 @@ CUSTOM_CSS = """
     .thank-you-note { text-align: center !important; font-size: 0.9rem !important; color: #93c5fd !important; line-height: 1.6 !important; }
     /* White text for model notes on dark backgrounds (recommendations section) */
     .model-note-white { font-size: 0.8rem !important; color: #ffffff !important; display: block; text-align: center !important; margin-top: 0.5rem !important; opacity: 0.8; }
-    
     /* Mobile responsive styles */
     @media (max-width: 768px) {
         .gradio-container {padding: 0 0.5rem !important;}
@@ -89,7 +88,7 @@ CUSTOM_CSS = """
         /* Adjust iframe for mobile */
         iframe[data-testid="embed-iframe"] {height: 280px !important;}
     }
-    
+
     @media (max-width: 480px) {
         .hero {padding: 1rem 0.5rem;}
         .hero h1 {font-size: 1.5rem !important;}
@@ -115,14 +114,14 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
         # Spotify Playlist Embed (centered)
         gr.HTML("""
             <div style="display: flex; justify-content: center; margin: 1rem 0;">
-                <iframe data-testid="embed-iframe" 
-                        style="border-radius:12px;" 
-                        src="https://open.spotify.com/embed/playlist/3f8Wce2yeoEpOIGufXDYwD?utm_source=generator&theme=0" 
-                        width="100%" 
-                        height="352" 
-                        frameBorder="0" 
-                        allowfullscreen="" 
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                <iframe data-testid="embed-iframe"
+                        style="border-radius:12px;"
+                        src="https://open.spotify.com/embed/playlist/3f8Wce2yeoEpOIGufXDYwD?utm_source=generator&theme=0"
+                        width="100%"
+                        height="352"
+                        frameBorder="0"
+                        allowfullscreen=""
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                         loading="lazy">
                 </iframe>
             </div>
