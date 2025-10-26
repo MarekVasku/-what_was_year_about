@@ -21,6 +21,8 @@ anyio==4.11.0
     #   httpx
     #   starlette
     #   watchfiles
+astroid==4.0.1
+    # via pylint
 attrs==25.4.0
     # via aiohttp
 bidict==0.23.1
@@ -41,6 +43,8 @@ click==8.3.0
     # via
     #   typer
     #   uvicorn
+dill==0.4.0
+    # via pylint
 distro==1.9.0
     # via groq
 docutils==0.22.2
@@ -110,6 +114,8 @@ ifaddr==0.2.0
     # via nicegui
 iniconfig==2.3.0
     # via pytest
+isort==7.0.0
+    # via pylint
 itsdangerous==2.2.0
     # via nicegui
 jinja2==3.1.6
@@ -126,6 +132,8 @@ markupsafe==3.0.3
     # via
     #   gradio
     #   jinja2
+mccabe==0.7.0
+    # via pylint
 mdurl==0.1.2
     # via markdown-it-py
 multidict==6.7.0
@@ -162,6 +170,8 @@ pandas==2.3.3
     #   gradio
 pillow==11.3.0
     # via gradio
+platformdirs==4.5.0
+    # via pylint
 plotly==6.3.1
     # via what-was-year-about (pyproject.toml)
 pluggy==1.6.0
@@ -190,6 +200,8 @@ pygments==2.19.2
     #   nicegui
     #   pytest
     #   rich
+pylint==4.0.2
+    # via what-was-year-about (pyproject.toml)
 pytest==8.4.2
     # via what-was-year-about (pyproject.toml)
 python-dateutil==2.9.0.post0
@@ -253,7 +265,9 @@ starlette==0.48.0
 threadpoolctl==3.6.0
     # via scikit-learn
 tomlkit==0.13.3
-    # via gradio
+    # via
+    #   gradio
+    #   pylint
 tqdm==4.67.1
     # via huggingface-hub
 typer==0.20.0
