@@ -268,9 +268,21 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
         view_key = mapping.get(ranking_view_choice, "overlay")
         results = create_dashboard(email_prefix, ranking_view=view_key)
 
-        # Hide warnings if email is provided and has data
-        has_data = email_prefix and email_prefix.strip() != ""
-        warning_text = "" if has_data else "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
+        # Decide warning content based on whether user-specific comparison exists
+        comparison_df = results[7]
+        has_email = bool(email_prefix and email_prefix.strip())
+        has_personal_data = bool(has_email and hasattr(comparison_df, "empty") and not comparison_df.empty)
+
+        if has_personal_data:
+            warning_text = ""
+        elif has_email:
+            warning_text = (
+                f"<p style='color: #f59e0b; font-size: 16px; font-weight: 600;'>"
+                f"⚠️ No votes found for <code>{email_prefix}</code> — showing community data only."
+                f"</p>"
+            )
+        else:
+            warning_text = WARNING_HTML
 
         return (*results, warning_text, warning_text, warning_text)
 

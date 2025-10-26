@@ -152,24 +152,25 @@ def get_data_cached(user_email_prefix: str = "") -> tuple[
     int,                  # total_votes
     float,                # avg_of_avgs
     int,                  # total_songs
-    str | None,           # error
+    str | None,           # error (only for critical failures; user-not-found is separate)
     pd.DataFrame | None,  # comparison
 ]:
     """Fetch and cache data with metrics for the UI.
 
-    Error handling: On failures or missing user, returns a full tuple with
-    df_raw=None, empty avg_scores, numeric zeros, and error set to a short message.
+    Error handling:
+    - Critical errors (data fetch/compute failures): returns None/empty for everything with error message
+    - User not found: returns community data successfully, comparison=None (dashboard handles this gracefully)
     """
     try:
         df = fetch_data()
         df_raw, avg_scores = compute_scores(df)
 
-        # If user email provided, get comparison
+        # If user email provided, try to get comparison (but don't fail if user not found)
         comparison = None
         if user_email_prefix:
-            comparison, error = compare_user_votes(user_email_prefix)
-            if error:
-                return None, pd.DataFrame(), 0, 0.0, 0, error, None
+            comparison, user_error = compare_user_votes(user_email_prefix)
+            # If user not found, we still want to show community charts
+            # comparison will be None, dashboard will display user-not-found message but show community data
 
         total_votes = len(df_raw) if df_raw is not None else 0
         avg_of_avgs = avg_scores["Average Score"].mean() if not avg_scores.empty else 0.0
@@ -177,6 +178,7 @@ def get_data_cached(user_email_prefix: str = "") -> tuple[
 
         return df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, None, comparison
     except Exception as e:
+        # Only critical data loading errors go here
         return None, pd.DataFrame(), 0, 0.0, 0, str(e), None
 
 

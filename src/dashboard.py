@@ -103,11 +103,15 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay")
         place_line(top3, "🥉"),
     ]
 
+    # Check if user email was provided but no votes found
+    user_not_found_message = ""
+    if user_email_prefix and (comparison is None or comparison.empty):
+        user_not_found_message = f"\n\n⚠️ **No votes found for `{user_email_prefix}`** — showing community data only.\n"
 
     overview = f"""### Winner
 {winner_display}
 
-Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs:.2f}
+Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs:.2f}{user_not_found_message}
 
 ### Top 3
 
@@ -189,6 +193,9 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
             recommendations_display = f"_Could not generate recommendations: {str(e)}_"
     else:
         comparison_display = pd.DataFrame()
+        # If user provided an email but no votes found, show message
+        if user_email_prefix:
+            recommendations_display = f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
 
     return (
         overview,
