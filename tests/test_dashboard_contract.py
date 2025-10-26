@@ -73,7 +73,7 @@ def test_create_dashboard_contract_happy(monkeypatch):
 
 def test_create_dashboard_contract_error(monkeypatch):
     # Return an error tuple consistent with get_data_cached's error path
-    def _fake_error_tuple(*args, **kwargs):
+    def _fake_error_tuple(*_args, **_kwargs):
         return None, pd.DataFrame(), 0, 0.0, 0, "Boom", None
 
     monkeypatch.setattr("dashboard.get_data_cached", _fake_error_tuple)

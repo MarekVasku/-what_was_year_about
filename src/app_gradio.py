@@ -438,13 +438,13 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
                     # Try both JSON and form data formats
                     response = requests.post(webhook_url, json=payload, timeout=10)
-                    if response.status_code == 200 or response.status_code == 201:
+                    if response.status_code in (200, 201):
                         email_sent = True
                         email_method = "webhook"
                     else:
                         # Try form data if JSON failed
                         response = requests.post(webhook_url, data=payload, timeout=10)
-                        if response.status_code == 200 or response.status_code == 201:
+                        if response.status_code in (200, 201):
                             email_sent = True
                             email_method = "webhook"
                         else:

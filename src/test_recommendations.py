@@ -52,7 +52,7 @@ Hope this helps!'''
     def test_empty_top5(self):
         """Test that empty top5 returns empty list."""
         result = generate_recommendations([], ["Song X"])
-        assert result == []
+        assert not result
 
     def test_malformed_json_returns_fallback(self):
         """Test fallback when JSON parsing fails."""

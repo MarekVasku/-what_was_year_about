@@ -22,6 +22,7 @@ disable=
     R1735,  # use-dict-literal (style preference; Ruff also suggests similar changes)
     W0621,  # redefined-outer-name (common in notebooks/scripts; reviewed separately)
     W0718,  # broad-exception-caught (intentional in UI/network boundaries)
+    R0801,  # duplicate-code (too noisy for this repo; revisit later)
 
 [TYPECHECK]
 # Some UI components (e.g., Gradio) generate attributes at runtime that Pylint

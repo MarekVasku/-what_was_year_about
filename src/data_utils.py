@@ -15,12 +15,12 @@ import pandas as pd
 from load_data import fetch_data
 
 try:
-    from sklearn.preprocessing import StandardScaler  # type: ignore
+    from sklearn.preprocessing import StandardScaler as SKL_STANDARD_SCALER  # type: ignore
     SKLEARN_AVAILABLE = True
 except Exception:
     # Sklearn not available or caused import error; features depending on it will be disabled
     SKLEARN_AVAILABLE = False
-    StandardScaler = None  # type: ignore
+    SKL_STANDARD_SCALER = None  # type: ignore
 
 
 def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.DataFrame]:
@@ -215,7 +215,7 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
 
     try:
         # Standardize the data
-        scaler = StandardScaler()  # type: ignore
+        scaler = SKL_STANDARD_SCALER()  # type: ignore
         df_scaled = scaler.fit_transform(np.array(df_filled))  # type: ignore
 
         # Use MDS (Multidimensional Scaling) for deterministic 2D projection
