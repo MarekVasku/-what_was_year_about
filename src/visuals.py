@@ -1,11 +1,23 @@
+"""Chart builders used by the dashboard UI.
+
+Conventions:
+- All functions return an empty go.Figure when inputs are None/empty, so the
+    UI can render gracefully without conditional logic.
+- Keep styling consistent (Inter font, light backgrounds) and avoid inline
+    business logic: inputs should already be precomputed data frames.
+"""
+
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 import numpy as np
 
 
 def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = None) -> go.Figure:
-    """Create main ranking chart with all songs."""
+    """Create the main ranking chart (average bars, optional user overlay).
+
+    avg_scores: DataFrame with ['Song','Average Score','Rank']
+    user_votes: DataFrame with ['Song','Your Score'] or None
+    """
     if avg_scores.empty:
         return go.Figure()
     
@@ -76,7 +88,10 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
 
 
 def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
-    """Create a main ranking chart showing only the user's scores ordered by the user's ranking."""
+    """Create a ranking chart using only the user's scores, sorted by user's ranking.
+
+    comparison: DataFrame with at least ['Song','Your Score']
+    """
     if comparison is None or comparison.empty:
         return go.Figure()
 
@@ -120,7 +135,7 @@ def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
 
 
 def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
-    """Top-10: no inner bar text; outside-left labels with medal+rank+title+score."""
+    """Top-10 chart: outside-left labels show medal, rank, title, and score."""
     if avg_scores.empty:
         return go.Figure()
 
@@ -183,7 +198,7 @@ def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
 
 
 def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
-    """Show score distribution of averages with highlights."""
+    """Histogram of average scores with a vertical line at the overall mean."""
     if avg_scores.empty:
         return go.Figure()
     
@@ -246,7 +261,7 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
 
 
 def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
-    """Show distribution of ALL individual votes (not averages)."""
+    """Histogram of all individual votes (per-song ratings), not averages."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
     
@@ -320,7 +335,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
 
 
 def make_podium_chart(avg_scores: pd.DataFrame) -> go.Figure:
-    """Podium for ranks 1–3 showing ALL tied songs; smart y-axis zoom with headroom."""
+    """Podium for ranks 1–3; shows all ties, with a smart y-axis band near the top."""
     if avg_scores.empty:
         return go.Figure()
 
@@ -406,7 +421,7 @@ def make_podium_chart(avg_scores: pd.DataFrame) -> go.Figure:
 
 
 def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figure:
-    """Show songs where user differed most from average (top 10 overrated + underrated)."""
+    """Songs where the user differed most from average (top 10 overrated/underrated)."""
     if comparison is None or comparison.empty:
         return go.Figure()
     
@@ -468,7 +483,7 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
 
 
 def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
-    """Side-by-side comparison of user's top 10 vs community's top 10."""
+    """Side-by-side bars: user's top 10 (right) vs community's top 10 (left)."""
     if comparison is None or comparison.empty:
         return go.Figure()
     
@@ -572,7 +587,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
 
 
 def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> go.Figure:
-    """Heatmap showing all voters' scores for all songs (anonymized except current user)."""
+    """Heatmap of all voter-by-song ratings (anonymized), highlights current user if set."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
     
@@ -629,7 +644,7 @@ def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> 
 
 
 def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
-    """Show standard deviation per song to identify polarizing vs consensus picks."""
+    """Top 10 most polarizing songs via highest per-song standard deviation."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
     
@@ -702,7 +717,7 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
 
 
 def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
-    """Show songs with lowest standard deviation (most consensus)."""
+    """Top 10 most agreeable songs via lowest per-song standard deviation."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
     
@@ -778,7 +793,7 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
 
 
 def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFrame | None) -> go.Figure:
-    """Compare user's score distribution vs community to show if harsh/generous rater."""
+    """Compare user's vote distribution vs community to infer harsh/generous patterns."""
     if comparison is None or comparison.empty or df_raw is None or df_raw.empty:
         return go.Figure()
     
@@ -859,54 +874,11 @@ def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFra
     return fig
 
 
-def make_taste_similarity_chart(similarity_df: pd.DataFrame | None) -> go.Figure:
-    """Show voters with most similar taste (correlation scores, anonymized)."""
-    if similarity_df is None or similarity_df.empty:
-        return go.Figure()
-    
-    # Show top 10 most similar and anonymize names
-    top_similar = similarity_df.head(10).copy()
-    top_similar['Voter'] = [f"Similar Voter {i+1}" for i in range(len(top_similar))]
-    top_similar = top_similar.sort_values('Similarity Score', ascending=True)
-    
-    # Color coding: green for high correlation, yellow for medium
-    colors = ['#27AE60' if score > 0.7 else '#F39C12' if score > 0.4 else '#95A5A6' 
-              for score in top_similar['Similarity Score']]
-    
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        y=top_similar['Voter'],
-        x=top_similar['Similarity Score'],
-        orientation='h',
-        marker=dict(color=colors, line=dict(width=0)),
-        text=[f"{score:.2f}" for score in top_similar['Similarity Score']],
-        textposition='outside',
-        hovertemplate='<b>%{y}</b><br>Similarity: %{x:.2f}<br>Songs in Common: %{customdata}<extra></extra>',
-        customdata=top_similar['Songs in Common']
-    ))
-    
-    fig.update_layout(
-        title={
-            'text': "Your Taste Twins (Most Similar Voters)",
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 24, 'color': '#1a1a1a', 'family': 'Inter'}
-        },
-        xaxis_title="Similarity Score (Correlation)",
-        xaxis=dict(range=[0, 1], showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False),
-        yaxis_title="",
-        plot_bgcolor='#fafafa',
-        paper_bgcolor='white',
-        height=max(400, len(top_similar) * 40),
-        margin=dict(l=150, r=100, t=80, b=60),
-        showlegend=False,
-    )
-    
-    return fig
+ 
 
 
 def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
-    """Create interactive 2D scatter plot of voter taste positions (anonymized)."""
+    """Interactive 2D scatter of voter taste positions (anonymized and highlighted for current user)."""
     if taste_map_df is None or taste_map_df.empty:
         return go.Figure()
     
@@ -994,111 +966,7 @@ def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
     return fig
 
 
-def make_song_clustering_chart(song_clusters_df: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
-    """Visualize song clusters with average scores."""
-    if song_clusters_df is None or song_clusters_df.empty:
-        return go.Figure()
-    
-    # Merge with average scores
-    merged = pd.merge(song_clusters_df, avg_scores[['Song', 'Average Score']], on='Song', how='left')
-    merged = merged.sort_values(['Cluster', 'Average Score'], ascending=[True, False])
-    
-    # Create color map for clusters
-    unique_clusters = merged['Cluster_Name'].unique()
-    color_palette = px.colors.qualitative.Set3
-    cluster_colors = {name: color_palette[i % len(color_palette)] for i, name in enumerate(unique_clusters)}
-    
-    fig = go.Figure()
-    
-    for cluster_name in unique_clusters:
-        cluster_data = merged[merged['Cluster_Name'] == cluster_name]
-        
-        fig.add_trace(go.Bar(
-            y=cluster_data['Song'],
-            x=cluster_data['Average Score'],
-            orientation='h',
-            name=cluster_name,
-            marker=dict(
-                color=cluster_colors[cluster_name],
-                line=dict(width=0)
-            ),
-            text=[f"{score:.1f}" for score in cluster_data['Average Score']],
-            textposition='outside',
-            hovertemplate='<b>%{y}</b><br>Cluster: ' + cluster_name + '<br>Score: %{x:.2f}<extra></extra>'
-        ))
-    
-    fig.update_layout(
-        title={
-            'text': "Song Clusters: Groups with Similar Voting Patterns",
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
-        },
-        xaxis_title="Average Score",
-        yaxis_title="",
-        plot_bgcolor='#fafafa',
-        paper_bgcolor='white',
-        height=max(600, len(merged) * 20),
-        margin=dict(l=250, r=100, t=80, b=60),
-        barmode='group',
-        showlegend=True,
-        legend=dict(
-            orientation='v',
-            yanchor='top',
-            y=1,
-            xanchor='left',
-            x=1.02
-        )
-    )
-    # Consistent grid styling for bars
-    fig.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False)
-    
-    return fig
+ 
 
 
-def make_voter_clustering_chart(voter_clusters_df: pd.DataFrame | None) -> go.Figure:
-    """Visualize voter clusters as a bar chart showing distribution."""
-    if voter_clusters_df is None or voter_clusters_df.empty:
-        return go.Figure()
-    
-    # Count voters in each cluster
-    cluster_counts = voter_clusters_df.groupby(['Cluster_Name', 'Cluster']).size().reset_index(name='Count')
-    cluster_counts = cluster_counts.sort_values('Count', ascending=True)
-    
-    # Create color map
-    color_palette = px.colors.qualitative.Pastel
-    colors = [color_palette[i % len(color_palette)] for i in cluster_counts['Cluster']]
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        y=cluster_counts['Cluster_Name'],
-        x=cluster_counts['Count'],
-        orientation='h',
-        marker=dict(
-            color=colors,
-            line=dict(width=0)
-        ),
-        text=cluster_counts['Count'],
-        textposition='outside',
-        hovertemplate='<b>%{y}</b><br>Voters: %{x}<extra></extra>',
-        showlegend=False
-    ))
-    
-    fig.update_layout(
-        title={
-            'text': "Voter Archetypes: Taste Groups",
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 20, 'color': '#2c3e50'}
-        },
-        xaxis_title="Number of Voters",
-        yaxis_title="",
-        plot_bgcolor='#fafafa',
-        paper_bgcolor='white',
-        height=max(400, len(cluster_counts) * 60),
-        margin=dict(l=200, r=100, t=80, b=60),
-    )
-    fig.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.06)', gridwidth=1, zeroline=False)
-    
-    return fig
+ 

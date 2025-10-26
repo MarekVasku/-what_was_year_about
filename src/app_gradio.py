@@ -1,3 +1,17 @@
+"""
+Gradio web UI for the annual "What Was [Year] About" music chart.
+
+This module wires UI components to the core dashboard generator in `dashboard.create_dashboard`.
+It intentionally keeps no business logic here; all computation, data access, and plotting
+primitives live in `data_utils.py`, `load_data.py`, `visuals.py`, and `dashboard.py`.
+
+Environment (optional):
+- WEBHOOK_URL: If set (e.g., on Hugging Face Spaces), feedback is posted via webhook
+- SMTP_EMAIL / SMTP_PASSWORD: If set locally, fallback SMTP is used for feedback
+
+Safe to run locally: `python src/app_gradio.py`
+"""
+
 import gradio as gr
 from gradio import themes
 from pathlib import Path
@@ -21,6 +35,13 @@ theme = themes.Soft(
 
 ROOT = Path(__file__).resolve().parent.parent
 HEADER = ROOT / "static" / "header.png"
+
+# Reusable HTML snippets (kept as constants to avoid duplication)
+WARNING_HTML = (
+    "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>"
+    "⚠️ To see your personalized insights, enter your email address above"
+    "</p>"
+)
 
 CUSTOM_CSS = """
     .gradio-container {max-width: 1400px !important; margin: 0 auto !important; padding: 0 1rem !important;}
@@ -216,11 +237,10 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     gr.Markdown("_Consensus achieved. Everyone basically gave these (almost) the same score._")
     agreeable_plot = gr.Plot()
 
-    gr.Markdown("## Clustering Analysis")
+    gr.Markdown("## Taste Similarity Map")
     gr.HTML(
         "<p style='font-size: 0.85rem; line-height: 1.4; color: #6b7280; font-style: italic; margin-bottom: 1rem;'>"
-        "Clustering: K‑Means on standardized voter rating vectors. "
-        "The 2D map is an MDS visualization; closer dots ≈ more similar taste."
+        "The 2D map uses an MDS projection over standardized voting patterns; closer dots ≈ more similar taste."
         "</p>"
     )
 
@@ -233,8 +253,12 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     gr.Markdown("_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._")
     recommendations_box = gr.Markdown("")
 
-    def refresh_with_email(email_prefix, ranking_view_choice):
-        """Wrapper to pass email and ranking view selector to create_dashboard."""
+    def refresh_with_email(email_prefix: str, ranking_view_choice: str):
+        """Fetch the full dashboard for a given user and ranking view.
+
+        Returns a long tuple of output values in the exact order defined by
+        `all_outputs` below. Keeping the order stable is critical for Gradio wiring.
+        """
         # Map radio string to simple key
         mapping = {
             "Final score + your score (overlay)": "overlay",
@@ -250,8 +274,12 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
         return (*results, warning_text, warning_text, warning_text)
 
-    def refresh_main_chart_only(email_prefix, ranking_view_choice):
-        """Refresh only the main chart when ranking view changes."""
+    def refresh_main_chart_only(email_prefix: str, ranking_view_choice: str):
+        """Refresh only the main chart when ranking view changes.
+
+        This avoids recomputing and re-rendering all other blocks while the
+        user toggles the main view radio.
+        """
         mapping = {
             "Final score + your score (overlay)": "overlay",
             "Only final score": "average",
@@ -297,7 +325,10 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
     # Initial load with empty email
     demo.load(
-        lambda: (*create_dashboard("", ranking_view="overlay"), "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>", "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>", "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"),
+        lambda: (
+            *create_dashboard("", ranking_view="overlay"),
+            WARNING_HTML, WARNING_HTML, WARNING_HTML
+        ),
         inputs=None,
         outputs=all_outputs,
     )
@@ -330,8 +361,14 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     submit_feedback_btn = gr.Button("Submit Feedback 📨", variant="primary", size="lg")
     feedback_status = gr.Markdown("")
 
-    def submit_feedback(email_prefix, songs, ideas):
-        """Handle feedback submission - attach user's email prefix if provided, email + file backup."""
+    def submit_feedback(email_prefix: str, songs: str, ideas: str) -> str:
+        """Handle feedback submission and return a user-facing status message.
+
+        Behavior:
+        - Always writes a text log file (best-effort) for persistence
+        - Prefers WEBHOOK_URL for deployments; falls back to SMTP if configured locally
+        - No secrets are stored; all creds are read from env
+        """
         if not songs.strip() and not ideas.strip():
             return "⚠️ Please fill in at least one field before submitting!"
 
@@ -479,5 +516,5 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
 
 if __name__ == "__main__":
-
-    demo.launch(share=False)  # Set share=True for public link
+    # Launch a local server. Set share=True for a public link (useful for quick demos).
+    demo.launch(share=False)
