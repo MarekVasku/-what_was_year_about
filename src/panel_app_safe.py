@@ -184,6 +184,4 @@ app = pn.Column(
 )
 
 if __name__ == "__main__":
-    raise SystemExit(
-        "panel_app_safe.py is deprecated and not used by the Gradio app."
-    )
+    raise SystemExit("panel_app_safe.py is deprecated and not used by the Gradio app.")

@@ -12,7 +12,6 @@ Environment (optional):
 Safe to run locally: `python src/app_gradio.py`
 """
 
-
 import gradio as gr
 
 from config import (
@@ -65,15 +64,24 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         )
         gr.Markdown(
             "<p style='font-size: 0.95rem; color: #ffffff !important; text-align: center; margin: 0.5rem 0 0.25rem;'>"
-            "Please enter the same email prefix you used in the survey (before the @). This unlocks your personal insights."
+            "Enter your email prefix (the part before @) to unlock personalized insights and comparisons."
             "</p>"
         )
         with gr.Row():
             year_selector = gr.Dropdown(
-                label="Select Year", choices=SUPPORTED_YEARS, value=DEFAULT_YEAR, show_label=True, scale=1
+                label="Select Year",
+                choices=SUPPORTED_YEARS,
+                value=DEFAULT_YEAR,
+                show_label=True,
+                scale=1,
+                info="Choose which year's results to view",
             )
             email_input = gr.Textbox(
-                label="Your email prefix", placeholder="e.g., macdemarco (without @gmail.com)", show_label=True, scale=2
+                label="Your email prefix",
+                placeholder="e.g., macdemarco (without @gmail.com)",
+                show_label=True,
+                scale=2,
+                info="Optional - only if you participated in the survey",
             )
             refresh_btn = gr.Button("Refresh Data 🔄", variant="primary", scale=1)
 
@@ -82,34 +90,34 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         overview = gr.Markdown("")
 
     # Podium visualization
-    gr.Markdown("## The Podium")
+    gr.Markdown("## 🏆 The Podium")
     gr.Markdown(
-        "_The champions. Song winners of last years. The chosen ones. The songs that made you fill '10' without hesitation (or maybe they tied at 7.29, who knows)._"
+        "_The champions. The songs that won over hearts and ears. These are the ones that made people click '10' without hesitation._"
     )
     podium_plot = gr.Plot()
 
     # Top 10 spotlight
-    gr.Markdown("## Top 10 Spotlight")
-    gr.Markdown(
-        "_Because everyone loves a top 10 list. No matter how many songs were in the final playlist, everyone loves top 10s._"
-    )
+    gr.Markdown("## ⭐ Top 10 Spotlight")
+    gr.Markdown("_The cream of the crop. These songs rose to the top and became the year's favorites._")
     top10_plot = gr.Plot()
 
     # Distribution charts side by side
-    gr.Markdown("## Score Distributions")
+    gr.Markdown("## 📊 Score Distributions")
     gr.Markdown(
-        "_Ever wondered if everyone's just vibing around 7s or if there are actual opinions happening? And what about your voting patterns? These histograms know._"
+        "_How did everyone rate the songs? Are most scores clustering around 7, or is there a wide variety of opinions? These charts reveal the patterns._"
     )
     with gr.Row():
         with gr.Column(scale=1):
+            gr.Markdown("**Average Score Distribution**")
             avg_dist_plot = gr.Plot()
         with gr.Column(scale=1):
+            gr.Markdown("**All Individual Votes**")
             all_votes_plot = gr.Plot()
 
     # Full rankings
-    gr.Markdown("## Complete Rankings")
+    gr.Markdown("## 📋 Complete Rankings")
     gr.Markdown(
-        "_All the songs. Every single one. Ranked from 'meh' to 'oh my, life changing song I am hearing'. Switch views to see where you agree or disagree._"
+        "_Every song ranked from highest to lowest. Switch between views to compare your scores with the community average._"
     )
     with gr.Row():
         ranking_view = gr.Radio(
@@ -131,69 +139,67 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
             )
 
     # New user-specific visualizations (only shown when user email is provided)
-    gr.Markdown("## Your Personal Music Analysis")
+    gr.Markdown("## 🎯 Your Personal Music Analysis")
     warning_personal = gr.Markdown(
-        "<p style='color: #9333ea; font-size: 16px; font-weight: 600; margin-bottom: 10px;'>⚠️ To see your personalized insights, enter your email address above.</p>"
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600; margin-bottom: 10px;'>⚠️ Enter your email prefix above to unlock personalized insights.</p>"
     )
     gr.Markdown(
-        "This is where your music taste is analyzed (if you filled this year's survey). Enter your email above to unlock personalized insight."
+        "_Deep dive into your unique music taste based on your survey responses. See how your preferences compare to the community._"
     )
 
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("### Biggest Disagreements")
-            gr.Markdown("_Where you went full contrarian. Songs you loved that everyone not as much, or vice versa_")
+            gr.Markdown("### 🎭 Biggest Disagreements")
+            gr.Markdown("_Songs where your opinion differs most from the crowd - your hidden gems or unpopular picks._")
             disagreements_plot = gr.Plot()
         with gr.Column(scale=1):
-            gr.Markdown("### Your Top 10 vs Community")
-            gr.Markdown("Left side: what the people chose. Right side: what you chose. The overlap reveals...")
+            gr.Markdown("### 🔄 Your Top 10 vs Community")
+            gr.Markdown("_Left: Community favorites. Right: Your favorites. How much overlap do you have?_")
             user_vs_top10_plot = gr.Plot()
 
-    gr.Markdown("### Your Rating Pattern")
+    gr.Markdown("### 📈 Your Rating Pattern")
     warning_rating = gr.Markdown(
-        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to see your rating pattern.</p>"
     )
-    gr.Markdown(
-        "_Are you a harsh critic handing out 3s like candy, or a generous soul showering 9s? This chart exposes your rating philosophy_"
-    )
+    gr.Markdown("_Are you a generous scorer or a tough critic? This reveals your rating tendencies._")
     rating_pattern_plot = gr.Plot()
 
-    gr.Markdown("## Community Insights")
-    gr.Markdown(
-        "_Dive into the collective consciousness. See patterns, chaos, and who's secretly rating everything a 5._"
-    )
+    gr.Markdown("## 👥 Community Insights")
+    gr.Markdown("_Explore how the community voted as a whole. Discover patterns, agreements, and controversies._")
 
-    gr.Markdown("### All Votes Heatmap")
-    gr.Markdown("_Voters are anonymized except you_")
+    gr.Markdown("### 🗺️ All Votes Heatmap")
+    gr.Markdown("_Visual representation of all votes. You'll be highlighted if you enter your email._")
     heatmap_plot = gr.Plot()
 
-    gr.Markdown("### Most Polarizing Songs (Top 10)")
-    gr.Markdown("_Where we all not met halfways. Maximum disagreement, maximum drama._")
+    gr.Markdown("### ⚡ Most Polarizing Songs (Top 10)")
+    gr.Markdown("_Maximum disagreement. These songs split the community - some loved them, some didn't._")
     controversy_plot = gr.Plot()
 
-    gr.Markdown("### Most Agreeable Songs (Top 10)")
-    gr.Markdown("_Consensus achieved. Everyone basically gave these (almost) the same score._")
+    gr.Markdown("### 🤝 Most Agreeable Songs (Top 10)")
+    gr.Markdown("_Maximum consensus. Everyone rated these songs similarly._")
     agreeable_plot = gr.Plot()
 
-    gr.Markdown("## Taste Similarity Map")
+    gr.Markdown("## 🎨 Taste Similarity Map")
     gr.HTML(
         "<p style='font-size: 0.85rem; line-height: 1.4; color: #6b7280; font-style: italic; margin-bottom: 1rem;'>"
-        "The 2D map uses an MDS projection over standardized voting patterns; closer dots ≈ more similar taste."
+        "This 2D visualization uses MDS (Multidimensional Scaling) to show voter similarity. "
+        "Voters with similar tastes appear closer together."
         "</p>"
     )
 
-    gr.Markdown("### 2D Taste Map")
+    gr.Markdown("### 🗺️ 2D Taste Map")
     gr.Markdown(
-        "_Explore music taste similarities (anonymized). Currently far from being useful, will come handy with more voters (please vote next years!)._"
+        "_Visual clustering of voters by taste similarity. As more people participate, patterns become clearer!_"
     )
     taste_map_plot = gr.Plot()
 
-    gr.Markdown("## Your Music Taste Recommendations")
+    gr.Markdown("## 🎵 Your Music Taste Recommendations")
     warning_recommendations = gr.Markdown(
-        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>"
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to unlock personalized insights.</p>"
     )
     gr.Markdown(
-        "_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._"
+        "_AI-powered recommendations based on your top-rated songs. "
+        "Discover new artists and genres that match your taste._"
     )
     recommendations_box = gr.Markdown("")
 
@@ -208,7 +214,7 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         warning_text = (
             ""
             if has_data
-            else "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
+            else "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to unlock personalized insights.</p>"
         )
 
         # Update hero title based on year
@@ -288,9 +294,9 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         lambda: (
             f"# What Was {DEFAULT_YEAR} About",
             *create_dashboard("", ranking_view="overlay", year=DEFAULT_YEAR).to_tuple(),
-            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
-            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
-            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to unlock personalized insights.</p>",
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to unlock personalized insights.</p>",
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to unlock personalized insights.</p>",
             gr.update(visible=True),
             gr.update(visible=True),
         ),
@@ -300,22 +306,22 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
 
     # Feedback section at the bottom
     gr.Markdown("---")
-    gr.Markdown("## 💬 Your Input")
+    gr.Markdown("## 💬 Share Your Feedback")
 
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("### Suggest Songs for 2025")
-            gr.Markdown("_Got songs you wanna share? Drop suggestions below. 2025 only_")
+            gr.Markdown("### 🎵 Suggest Songs for 2025")
+            gr.Markdown("_Know some amazing tracks that should be on next year's list? Share them here!_")
             song_suggestions = gr.Textbox(
                 label="Your 2025 Song Suggestions",
-                placeholder="Artist - Song Title\nArtist - Another Song\n...",
+                placeholder="Artist - Song Title\nAnother Artist - Another Song\n...",
                 lines=5,
                 max_lines=10,
             )
 
         with gr.Column(scale=1):
-            gr.Markdown("### Ideas for Improvement")
-            gr.Markdown("_Missing a chart? Want a different visualization? Tell me what would make this better_")
+            gr.Markdown("### 💡 Ideas for Improvement")
+            gr.Markdown("_Have suggestions for new features or visualizations? Let us know what would make this better!_")
             improvement_ideas = gr.Textbox(
                 label="Your Ideas",
                 placeholder="I think it would be cool if...",

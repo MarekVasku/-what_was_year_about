@@ -45,7 +45,13 @@ def test_create_dashboard_contract_happy(monkeypatch):
     # Monkeypatch the symbol as used in dashboard.py (dashboard imports it from data_utils)
     monkeypatch.setattr("dashboard.get_data_cached", lambda *args, **kwargs: _fake_data_tuple())
 
-    result = dashboard.create_dashboard("", ranking_view="overlay")
+    dashboard_data = dashboard.create_dashboard("", ranking_view="overlay")
+
+    # Should return a DashboardData object
+    assert hasattr(dashboard_data, 'to_tuple'), "create_dashboard should return DashboardData object"
+
+    # Convert to tuple for backward compatibility checks
+    result = dashboard_data.to_tuple()
 
     # Strict length contract
     assert isinstance(result, tuple)
@@ -78,7 +84,13 @@ def test_create_dashboard_contract_error(monkeypatch):
 
     monkeypatch.setattr("dashboard.get_data_cached", _fake_error_tuple)
 
-    result = dashboard.create_dashboard("", ranking_view="overlay")
+    dashboard_data = dashboard.create_dashboard("", ranking_view="overlay")
+
+    # Should return a DashboardData object
+    assert hasattr(dashboard_data, 'to_tuple'), "create_dashboard should return DashboardData object"
+
+    # Convert to tuple for backward compatibility checks
+    result = dashboard_data.to_tuple()
 
     assert isinstance(result, tuple)
     assert len(result) == 16

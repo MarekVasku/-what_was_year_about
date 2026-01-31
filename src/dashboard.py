@@ -28,21 +28,40 @@ from visuals import (
 
 
 def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay", year: int = 2024):
-    """Generate all dashboard components with optional user comparison.
+    """Generate all dashboard components with optional user-specific comparisons.
+
+    This is the main orchestration function that:
+    1. Loads and processes voting data for the specified year
+    2. Generates all visualizations (charts, tables, heatmaps)
+    3. Creates personalized insights if user email is provided
+    4. Returns a structured DashboardData object with all components
 
     Args:
-        user_email_prefix: User's email prefix for personalized data
-        ranking_view: one of "overlay" (avg + your scores), "user" (only your scores), or "average" (only group average)
-        year: Year to display data for (2019, 2023, or 2024)
+        user_email_prefix: User's email prefix (part before @) for personalized insights.
+                          Leave empty for community-only view.
+        ranking_view: Chart view mode, one of:
+                     - "overlay": Show both average and user scores (default)
+                     - "user": Show only user's scores
+                     - "average": Show only community average scores
+        year: Year to display data for. Must be one of: 2019, 2023, or 2024
+
+    Returns:
+        DashboardData: Structured object containing all dashboard components:
+        - overview: Markdown text with winner, top 3, and stats
+        - Various plot figures (podium, top10, distributions, etc.)
+        - Tables for rankings and comparisons
+        - LLM-generated insights and recommendations (if user email provided)
     """
+    # Load data with caching
     df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, error, comparison = get_data_cached(
         user_email_prefix, year
     )
 
+    # Handle critical data loading errors
     empty_fig = make_podium_chart(pd.DataFrame())
     if error:
         return DashboardData(
-            overview=f"### ⚠️ Error Loading Data\n```\n{error}\n```",
+            overview=f"### ⚠️ Error Loading Data\n\n{error}\n\nPlease try refreshing or selecting a different year.",
             total_votes=0,
             total_songs=0,
             avg_of_avgs=0.0,
@@ -64,10 +83,11 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
             recommendations_display="",
         )
 
+    # Handle case where no voting data is available
     if avg_scores.empty:
         empty_fig = make_podium_chart(pd.DataFrame())
         return DashboardData(
-            overview="### 📊 No Data Yet\nClick refresh to load voting results.",
+            overview="### 📊 No Data Available\n\nNo voting data found for this year. Please try refreshing or selecting a different year.",
             total_votes=0,
             total_songs=0,
             avg_of_avgs=0.0,
@@ -204,7 +224,9 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         comparison_display = pd.DataFrame()
         # If user provided an email but no votes found, show message
         if user_email_prefix:
-            recommendations_display = f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
+            recommendations_display = (
+                f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
+            )
 
     return DashboardData(
         overview=overview,

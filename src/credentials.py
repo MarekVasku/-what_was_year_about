@@ -56,9 +56,7 @@ def authenticate() -> gspread.Client:
             gc = gspread.service_account(filename=str(CREDENTIALS_PATH))
             return gc
         except Exception as e:
-            raise CredentialsError(
-                f"Failed to authenticate with credentials.json: {str(e)}"
-            ) from e
+            raise CredentialsError(f"Failed to authenticate with credentials.json: {str(e)}") from e
 
     # No credentials found
     raise CredentialsError(

@@ -3,11 +3,19 @@ Environment settings and configuration management using Pydantic.
 Centralizes all environment variables with validation.
 """
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables and .env file."""
+
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",  # Ignore unexpected environment variables
+    )
 
     # Google Sheets Authentication
     google_sheets_credentials: str = ""
@@ -34,12 +42,6 @@ class Settings(BaseSettings):
     # Demo/Development
     demo_email_prefix: str | None = None
     debug: bool = False
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        extra = "ignore"  # Ignore unexpected environment variables
 
     @property
     def llm_enabled(self) -> bool:
