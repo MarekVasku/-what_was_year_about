@@ -50,8 +50,14 @@ class FeedbackSubmitter:
             smtp_email: Gmail address for SMTP
             smtp_password: Gmail app password for SMTP
             receiver_email: Email address to receive feedback
-            timeout: Request timeout in seconds
+            timeout: Request timeout in seconds (must be between 1 and 60)
+
+        Raises:
+            ValueError: If timeout is not within valid range
         """
+        if not 1 <= timeout <= 60:
+            raise ValueError(f"Timeout must be between 1 and 60 seconds, got {timeout}")
+
         self.webhook_url = webhook_url
         self.smtp_email = smtp_email
         self.smtp_password = smtp_password

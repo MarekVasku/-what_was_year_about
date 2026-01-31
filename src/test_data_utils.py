@@ -91,21 +91,6 @@ class TestComputeScores:
         assert "Song A" in avg_scores["Song"].values
 
 
-class TestCompareUserVotes:
-    """Test suite for compare_user_votes function."""
-
-    def test_compare_user_votes_basic(self):
-        """Test basic user vote comparison."""
-        # This test requires mocking fetch_data, so it's a basic structure
-        # In practice, use pytest-mock or unittest.mock
-        pass
-
-    def test_compare_user_votes_user_not_found(self):
-        """Test handling when user email not found."""
-        # Should return empty comparison and error message
-        pass
-
-
 class TestGetUserVotes:
     """Test suite for get_user_votes function."""
 

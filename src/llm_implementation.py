@@ -184,6 +184,41 @@ def get_user_voting_insight(comparison_df: pd.DataFrame) -> str:
         return f"Could not generate insight: {str(e)}"
 
 
+def _parse_json_with_fallback(response: str) -> list[dict[str, str]] | None:
+    """
+    Parse JSON from LLM response with multiple fallback strategies.
+
+    Args:
+        response: Raw LLM response text
+
+    Returns:
+        Parsed list of dicts or None if parsing fails
+    """
+    import json
+    import re
+
+    # Strategy 1: Try to find JSON array with regex
+    json_match = re.search(r"\[\s*\{.*\}\s*\]", response, re.DOTALL)
+    if json_match:
+        json_str = json_match.group(0)
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            pass
+
+    # Strategy 2: Find first [ and last ] and extract everything between
+    start_idx = response.find("[")
+    end_idx = response.rfind("]")
+    if start_idx >= 0 and end_idx > start_idx:
+        json_str = response[start_idx : end_idx + 1]
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            pass
+
+    return None
+
+
 def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) -> list[dict[str, str]]:
     """Generate artist/genre recommendations based on user's top 5 and bottom 5 songs.
 
@@ -201,8 +236,11 @@ def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) ->
 
     # Sanitize song names to prevent JSON parsing issues with escape sequences
     def sanitize_song(song: str) -> str:
-        """Remove problematic characters from song names."""
-        return song.replace("\\", "/").replace("\n", " ").replace("\r", " ").strip()
+        """Escape problematic characters from song names."""
+        # Escape backslashes instead of converting them to forward slashes to avoid
+        # unintentionally altering song titles while still preventing invalid escape
+        # sequences in JSON-like contexts.
+        return song.replace("\\", "\\\\").replace("\n", " ").replace("\r", " ").strip()
 
     top5_clean = [sanitize_song(s) for s in top5]
     bottom5_clean = [sanitize_song(s) for s in bottom5]
@@ -214,55 +252,30 @@ def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) ->
         # Structured JSON output model, lower temperature
         response = call_groq(prompt, MODEL_JSON, temperature=0.2, max_tokens=800)
 
-        # Try to parse JSON from response
-        import json
-        import re
+        # Try to parse JSON from response using fallback strategies
+        recommendations = _parse_json_with_fallback(response)
 
-        # Extract JSON array if wrapped in markdown or other text
-        # Try to find balanced brackets to handle complex content
-        json_match = re.search(r"\[\s*\{.*\}\s*\]", response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(0)
-            try:
-                recommendations = json.loads(json_str)
-            except json.JSONDecodeError:
-                # Try with re.escape to handle backslashes in content
-                # Find first [ and last ] and extract everything between
-                start_idx = response.find("[")
-                end_idx = response.rfind("]")
-                if start_idx >= 0 and end_idx > start_idx:
-                    json_str = response[start_idx : end_idx + 1]
-                    try:
-                        recommendations = json.loads(json_str)
-                    except json.JSONDecodeError as e:
-                        # If still failing, return empty with helpful error
-                        return [
-                            {
-                                "song": "Unable to parse recommendations",
-                                "artist": "",
-                                "reason": f"JSON parsing error: {str(e)[:100]}",
-                            }
-                        ]
-                else:
-                    return [
-                        {
-                            "song": "Unable to analyze taste",
-                            "artist": "",
-                            "reason": "Could not find JSON in AI response.",
-                        }
-                    ]
+        if recommendations is None:
+            return [
+                {
+                    "song": "Unable to analyze taste",
+                    "artist": "",
+                    "reason": "Could not find valid JSON in AI response.",
+                }
+            ]
 
-            # Validate structure
-            if isinstance(recommendations, list):
-                valid_recs = []
-                for rec in recommendations[:n]:  # Limit to n recommendations
-                    if isinstance(rec, dict) and all(k in rec for k in ["song", "artist", "reason"]):
-                        valid_recs.append(
-                            {"song": str(rec["song"]), "artist": str(rec["artist"]), "reason": str(rec["reason"])}
-                        )
+        # Validate structure
+        if isinstance(recommendations, list):
+            valid_recs = []
+            for rec in recommendations[:n]:  # Limit to n recommendations
+                if isinstance(rec, dict) and all(k in rec for k in ["song", "artist", "reason"]):
+                    valid_recs.append(
+                        {"song": str(rec["song"]), "artist": str(rec["artist"]), "reason": str(rec["reason"])}
+                    )
+            if valid_recs:
                 return valid_recs
 
-        # Fallback if JSON parsing fails
+        # Fallback if validation fails
         return [
             {
                 "song": "Unable to analyze taste",

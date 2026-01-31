@@ -3,6 +3,8 @@ Configuration and constants for the music survey visualization app.
 Centralizes hardcoded values to avoid duplication across modules.
 """
 
+from pathlib import Path
+
 # ============================================================================
 # SPREADSHEET CONFIGURATION
 # ============================================================================
@@ -76,8 +78,6 @@ SONG_COLUMNS_START_INDEX = 2  # After Timestamp and Email columns
 # ============================================================================
 # FILE PATHS
 # ============================================================================
-
-from pathlib import Path  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = Path(__file__).resolve().parent

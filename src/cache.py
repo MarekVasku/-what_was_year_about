@@ -3,6 +3,7 @@ Caching with Time-To-Live (TTL) support.
 Replaces @lru_cache with granular control over cache expiration.
 """
 
+from collections import OrderedDict
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any, Generic, TypeVar
@@ -31,7 +32,7 @@ class CachedDataLoader(Generic[T]):
         """
         self.ttl = timedelta(seconds=ttl_seconds)
         self.max_size = max_size
-        self.cache: dict[tuple, tuple[T, datetime]] = {}
+        self.cache: OrderedDict[tuple, tuple[T, datetime]] = OrderedDict()
         self.hits = 0
         self.misses = 0
 
@@ -60,10 +61,10 @@ class CachedDataLoader(Generic[T]):
         self.misses += 1
         data = loader_fn()
 
-        # Enforce max size (FIFO)
+        # Enforce max size (FIFO eviction using OrderedDict)
         if len(self.cache) >= self.max_size:
-            oldest_key = next(iter(self.cache))
-            del self.cache[oldest_key]
+            # Remove the oldest item (first inserted)
+            self.cache.popitem(last=False)
 
         self.cache[key] = (data, datetime.now())
         return data

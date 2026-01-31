@@ -104,7 +104,22 @@ def _standardize_legacy_votes(df: pd.DataFrame | None, year: int) -> pd.DataFram
         if total == 0:
             return False
         in_range = vals.between(1, 10, inclusive="both").sum()
-        return in_range >= 1 and in_range >= max(1, int(0.1 * total))
+
+        # Require more than a single in-range value and a reasonable proportion
+        if in_range < 3:
+            return False
+
+        ratio = in_range / total
+        col_name = str(series.name).lower().strip()
+        name_suggests_vote = any(
+            token in col_name for token in ("vote", "voter", "score", "rating", "points")
+        )
+
+        # If the column name suggests votes/scores, allow a slightly lower ratio;
+        # otherwise require that most values look like votes to avoid metadata columns.
+        if name_suggests_vote:
+            return ratio >= 0.2
+        return ratio >= 0.5
 
     voter_cols = [c for c in candidates if is_vote_column(df2[c])]
     if not voter_cols:
@@ -116,7 +131,7 @@ def _standardize_legacy_votes(df: pd.DataFrame | None, year: int) -> pd.DataFram
     for voter in voter_cols:
         vals = pd.to_numeric(df2[voter], errors="coerce")
         row: dict = {"Timestamp": "", "Email address": f"{voter}@legacy"}
-        for title, v in zip(songs, vals, strict=False):
+        for title, v in zip(songs, vals, strict=True):
             row[title] = float(v) if pd.notna(v) else math.nan
         rows.append(row)
 
@@ -383,7 +398,11 @@ def cluster_songs(df: pd.DataFrame | None, n_clusters: int = 5) -> tuple[pd.Data
     song_cols = df.columns[2:]
     df_numeric = df[song_cols].apply(pd.to_numeric, errors="coerce")
 
+    # Transpose so each row is a song, each column is a voter
+    song_votes = df_numeric.T
 
+    # Fill NaN with column mean
+    song_votes_filled = song_votes.fillna(song_votes.mean())
 
     # Need at least n_clusters songs
     actual_clusters = min(n_clusters, len(song_votes_filled))
@@ -393,7 +412,16 @@ def cluster_songs(df: pd.DataFrame | None, n_clusters: int = 5) -> tuple[pd.Data
     if not SKLEARN_AVAILABLE:
         return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
 
+    try:
+        # Standardize
+        scaler = StandardScaler()  # type: ignore
+        song_votes_scaled = scaler.fit_transform(np.array(song_votes_filled))  # type: ignore
 
+        # K-means clustering
+        from sklearn.cluster import KMeans  # type: ignore
+
+        kmeans = KMeans(n_clusters=actual_clusters, random_state=42, n_init=10)  # type: ignore
+        clusters = kmeans.fit_predict(song_votes_scaled)  # type: ignore
 
         # Create result dataframe
         result = pd.DataFrame({"Song": song_cols.tolist(), "Cluster": clusters})
@@ -466,6 +494,8 @@ def cluster_voters(df: pd.DataFrame | None, n_clusters: int = 4) -> pd.DataFrame
         df_scaled = scaler.fit_transform(np.array(df_filled))  # type: ignore
 
         # K-means clustering
+        from sklearn.cluster import KMeans  # type: ignore
+
         kmeans = KMeans(n_clusters=actual_clusters, random_state=42, n_init=10)  # type: ignore
         clusters = kmeans.fit_predict(df_scaled)  # type: ignore
 

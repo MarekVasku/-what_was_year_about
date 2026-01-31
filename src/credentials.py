@@ -36,8 +36,11 @@ def authenticate() -> gspread.Client:
             creds_dict = json.loads(creds_json)
             gc = gspread.service_account_from_dict(creds_dict)
             return gc
-        except (json.JSONDecodeError, Exception):
-            # Continue to next method
+        except json.JSONDecodeError:
+            # Invalid JSON format, continue to next method
+            pass
+        except (gspread.exceptions.GSpreadException, ValueError):
+            # Authentication failed with this credential, continue to next method
             pass
 
     # Attempt 2: File path via environment variable
@@ -46,8 +49,8 @@ def authenticate() -> gspread.Client:
         try:
             gc = gspread.service_account(filename=creds_path_env)
             return gc
-        except Exception:
-            # Continue to next method
+        except (gspread.exceptions.GSpreadException, ValueError, FileNotFoundError):
+            # Failed to authenticate or read file, continue to next method
             pass
 
     # Attempt 3: Local credentials.json file
@@ -55,7 +58,7 @@ def authenticate() -> gspread.Client:
         try:
             gc = gspread.service_account(filename=str(CREDENTIALS_PATH))
             return gc
-        except Exception as e:
+        except (gspread.exceptions.GSpreadException, ValueError, FileNotFoundError) as e:
             raise CredentialsError(
                 f"Failed to authenticate with credentials.json: {str(e)}"
             ) from e

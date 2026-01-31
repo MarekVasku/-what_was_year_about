@@ -9,7 +9,6 @@ from llm_implementation import analyze_user_votes
 src_path = os.path.join(os.path.dirname(__file__), "src")
 sys.path.append(src_path)
 
-from llm_implementation import analyze_user_votes  # noqa: E402
 
 # Create a test comparison DataFrame with real song data
 test_data = {

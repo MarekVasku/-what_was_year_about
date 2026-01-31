@@ -137,7 +137,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             ),
             elem_classes=["model-note"],
         )
-        
+
         # Demo banner
         gr.HTML(
             "<div style='background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); "
@@ -151,7 +151,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             "</p>"
             "</div>"
         )
-        
+
         gr.Markdown(
             "<p style='font-size: 0.95rem; color: #ffffff !important; text-align: center; margin: 0.5rem 0 0.25rem;'>"
             "Please enter the same email prefix you used in the survey (before the @). This unlocks your personal insights."
