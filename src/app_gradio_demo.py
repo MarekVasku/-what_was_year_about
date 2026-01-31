@@ -106,7 +106,6 @@ CUSTOM_CSS = """
 """
 
 with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) as demo:
-
     # Hero section with optional image
     with gr.Column(elem_classes=["hero"]):
         gr.Image(value=str(HEADER), show_label=False, height=300)
@@ -159,9 +158,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
         )
         with gr.Row():
             email_input = gr.Textbox(
-                label="Your email prefix",
-                placeholder="e.g., macdemarco (without @gmail.com)",
-                show_label=True
+                label="Your email prefix", placeholder="e.g., macdemarco (without @gmail.com)", show_label=True
             )
             refresh_btn = gr.Button("Refresh Data 🔄", variant="primary")
 
@@ -171,17 +168,23 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
     # Podium visualization
     gr.Markdown("## The Podium")
-    gr.Markdown("_The champions. Song winners of last years. The chosen ones. The songs that made you fill '10' without hesitation (or maybe they tied at 7.29, who knows)._")
+    gr.Markdown(
+        "_The champions. Song winners of last years. The chosen ones. The songs that made you fill '10' without hesitation (or maybe they tied at 7.29, who knows)._"
+    )
     podium_plot = gr.Plot()
 
     # Top 10 spotlight
     gr.Markdown("## Top 10 Spotlight")
-    gr.Markdown("_Because everyone loves a top 10 list. No matter how many songs were in the final playlist, everyone loves top 10s._")
+    gr.Markdown(
+        "_Because everyone loves a top 10 list. No matter how many songs were in the final playlist, everyone loves top 10s._"
+    )
     top10_plot = gr.Plot()
 
     # Distribution charts side by side
     gr.Markdown("## Score Distributions")
-    gr.Markdown("_Ever wondered if everyone's just vibing around 7s or if there are actual opinions happening? And what about your voting patterns? These histograms know._")
+    gr.Markdown(
+        "_Ever wondered if everyone's just vibing around 7s or if there are actual opinions happening? And what about your voting patterns? These histograms know._"
+    )
     with gr.Row():
         with gr.Column(scale=1):
             avg_dist_plot = gr.Plot()
@@ -190,7 +193,9 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
     # Full rankings
     gr.Markdown("## Complete Rankings")
-    gr.Markdown("_All the songs. Every single one. Ranked from 'meh' to 'oh my, life changing song I am hearing'. Switch views to see where you agree or disagree._")
+    gr.Markdown(
+        "_All the songs. Every single one. Ranked from 'meh' to 'oh my, life changing song I am hearing'. Switch views to see where you agree or disagree._"
+    )
     with gr.Row():
         ranking_view = gr.Radio(
             label="View",
@@ -207,23 +212,21 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### Overall Rankings")
-            all_songs_table = gr.Dataframe(
-                headers=["Rank", "Song", "Average Score"],
-                interactive=False,
-                wrap=True
-            )
+            all_songs_table = gr.Dataframe(headers=["Rank", "Song", "Average Score"], interactive=False, wrap=True)
         with gr.Column(scale=1):
             gr.Markdown("### Your Votes vs Average")
             user_comparison = gr.Dataframe(
-                headers=["Rank", "Song", "Average Score", "Your Score", "Difference"],
-                interactive=False,
-                wrap=True
+                headers=["Rank", "Song", "Average Score", "Your Score", "Difference"], interactive=False, wrap=True
             )
 
     # New user-specific visualizations (only shown when user email is provided)
     gr.Markdown("## Your Personal Music Analysis")
-    warning_personal = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600; margin-bottom: 10px;'>⚠️ To see your personalized insights, enter your email address above.</p>")
-    gr.Markdown("This is where your music taste is analyzed (if you filled this year's survey). Enter your email above to unlock personalized insight.")
+    warning_personal = gr.Markdown(
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600; margin-bottom: 10px;'>⚠️ To see your personalized insights, enter your email address above.</p>"
+    )
+    gr.Markdown(
+        "This is where your music taste is analyzed (if you filled this year's survey). Enter your email above to unlock personalized insight."
+    )
 
     with gr.Row():
         with gr.Column(scale=1):
@@ -236,12 +239,18 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             user_vs_top10_plot = gr.Plot()
 
     gr.Markdown("### Your Rating Pattern")
-    warning_rating = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>")
-    gr.Markdown("_Are you a harsh critic handing out 3s like candy, or a generous soul showering 9s? This chart exposes your rating philosophy_")
+    warning_rating = gr.Markdown(
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
+    )
+    gr.Markdown(
+        "_Are you a harsh critic handing out 3s like candy, or a generous soul showering 9s? This chart exposes your rating philosophy_"
+    )
     rating_pattern_plot = gr.Plot()
 
     gr.Markdown("## Community Insights")
-    gr.Markdown("_Dive into the collective consciousness. See patterns, chaos, and who's secretly rating everything a 5._")
+    gr.Markdown(
+        "_Dive into the collective consciousness. See patterns, chaos, and who's secretly rating everything a 5._"
+    )
 
     gr.Markdown("### All Votes Heatmap")
     gr.Markdown("_Voters are anonymized except you_")
@@ -263,12 +272,18 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     )
 
     gr.Markdown("### 2D Taste Map")
-    gr.Markdown("_Explore music taste similarities (anonymized). Currently far from being useful, will come handy with more voters (please vote next years!)._")
+    gr.Markdown(
+        "_Explore music taste similarities (anonymized). Currently far from being useful, will come handy with more voters (please vote next years!)._"
+    )
     taste_map_plot = gr.Plot()
 
     gr.Markdown("## Your Music Taste Recommendations")
-    warning_recommendations = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>")
-    gr.Markdown("_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._")
+    warning_recommendations = gr.Markdown(
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>"
+    )
+    gr.Markdown(
+        "_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._"
+    )
     recommendations_box = gr.Markdown("")
 
     def refresh_with_email(email_prefix: str, ranking_view_choice: str):
@@ -322,9 +337,19 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
     # Wire up refresh with email
     all_outputs = [
-        overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot,
-        all_songs_table, user_comparison,
-        disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, agreeable_plot,
+        overview,
+        podium_plot,
+        top10_plot,
+        avg_dist_plot,
+        all_votes_plot,
+        main_plot,
+        all_songs_table,
+        user_comparison,
+        disagreements_plot,
+        user_vs_top10_plot,
+        heatmap_plot,
+        controversy_plot,
+        agreeable_plot,
         rating_pattern_plot,
         taste_map_plot,
         recommendations_box,
@@ -357,7 +382,9 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
     demo.load(
         lambda: (
             *create_dashboard(DEMO_EMAIL_PREFIX, ranking_view="overlay"),
-            "", "", ""  # No warnings since we have personal data
+            "",
+            "",
+            "",  # No warnings since we have personal data
         ),
         inputs=None,
         outputs=all_outputs,
@@ -433,11 +460,13 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
             # Always save to file as backup
             try:
-                with open('feedback_log.txt', 'a', encoding='utf-8') as f:
-                    f.write(f"\n{'='*60}\n")
+                with open("feedback_log.txt", "a", encoding="utf-8") as f:
+                    f.write(f"\n{'=' * 60}\n")
                     f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                    f.write(f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n")
-                    f.write(f"{'='*60}\n")
+                    f.write(
+                        f"Email Prefix: {email_prefix.strip() if email_prefix and email_prefix.strip() else '(none)'}\n"
+                    )
+                    f.write(f"{'=' * 60}\n")
                     f.write(body)
                 file_saved = True
             except Exception:
@@ -485,13 +514,15 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
             if not email_sent and sender_email and sender_password:
                 try:
                     msg = MIMEMultipart()
-                    msg['From'] = sender_email
-                    msg['To'] = receiver_email
+                    msg["From"] = sender_email
+                    msg["To"] = receiver_email
                     subject_suffix = f" | from: {email_prefix.strip()}" if email_prefix and email_prefix.strip() else ""
-                    msg['Subject'] = f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}{subject_suffix}"
-                    msg.attach(MIMEText(body, 'plain'))
+                    msg["Subject"] = (
+                        f"Music Chart Feedback - {datetime.now().strftime('%Y-%m-%d %H:%M')}{subject_suffix}"
+                    )
+                    msg.attach(MIMEText(body, "plain"))
 
-                    with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+                    with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
                         server.starttls()
                         server.login(sender_email, sender_password)
                         server.send_message(msg)
@@ -523,6 +554,7 @@ with gr.Blocks(title="What was 2024 about chart", theme=theme, css=CUSTOM_CSS) a
 
         except Exception as e:
             import traceback
+
             error_trace = traceback.format_exc()
             return f"❌ Error saving feedback: {str(e)}\n\nDetails:\n{error_trace}"
 

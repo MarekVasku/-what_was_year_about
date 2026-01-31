@@ -3,12 +3,34 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from config import (
+    CHART_BACKGROUND_COLOR,
+    CHART_BOTTOM_MARGIN,
+    CHART_FONT_FAMILY,
+    CHART_GRID_COLOR,
+    CHART_LABEL_FONT_SIZE,
+    CHART_LEFT_MARGIN,
+    CHART_MIN_HEIGHT,
+    CHART_PRIMARY_COLOR,
+    CHART_RIGHT_MARGIN,
+    CHART_ROW_HEIGHT,
+    CHART_TITLE_FONT_SIZE,
+    CHART_TOP_MARGIN,
+    CHART_USER_SCORE_COLOR,
+    SCORE_DISPLAY_MAX,
+    TOP_N_DISPLAY,
+)
+
 
 def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = None) -> go.Figure:
-    """Create the main ranking chart (average bars, optional user overlay).
+    """Create the main ranking chart with average bars and optional user overlay.
 
-    avg_scores: DataFrame with ['Song','Average Score','Rank']
-    user_votes: DataFrame with ['Song','Your Score'] or None
+    Args:
+        avg_scores: DataFrame with columns ['Song', 'Average Score', 'Rank']
+        user_votes: Optional DataFrame with columns ['Song', 'Your Score']
+
+    Returns:
+        Plotly Figure with horizontal bar chart
     """
     if avg_scores.empty:
         return go.Figure()
@@ -27,9 +49,13 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
             marker=dict(
                 color=df_plot["Average Score"],
                 colorscale="Viridis",
-                line=dict(width=0),  # no border
+                line=dict(width=0),
                 showscale=True,
-                colorbar=dict(title=dict(text="Score", font=dict(size=12)), thickness=12, len=0.7),
+                colorbar=dict(
+                    title=dict(text="Score", font=dict(size=CHART_LABEL_FONT_SIZE)),
+                    thickness=12,
+                    len=0.7,
+                ),
             ),
             hovertemplate="<b>%{y}</b><br>Rank: #%{customdata}<br>Average Score: %{x:.2f}<extra></extra>",
             customdata=df_plot["Rank"],
@@ -46,8 +72,8 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
                 orientation="h",
                 name="Your Score",
                 marker=dict(
-                    color="rgba(255, 99, 71, 0.8)",
-                    line=dict(width=0),  # no border
+                    color=CHART_USER_SCORE_COLOR,
+                    line=dict(width=0),
                 ),
                 hovertemplate="<b>%{y}</b><br>Your Score: %{x:.2f}<extra></extra>",
                 opacity=0.6,
@@ -59,17 +85,22 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
             "text": "Complete Song Ranking",
             "x": 0.5,
             "xanchor": "center",
-            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+            "font": {"size": CHART_TITLE_FONT_SIZE, "color": CHART_PRIMARY_COLOR, "family": CHART_FONT_FAMILY},
         },
         xaxis_title="Average Score",
         yaxis_title="",
-        xaxis=dict(range=[0, 10.5], showgrid=True, gridcolor="rgba(0,0,0,0.06)"),
+        xaxis=dict(range=[0, SCORE_DISPLAY_MAX], showgrid=True, gridcolor=CHART_GRID_COLOR),
         yaxis=dict(showgrid=False),
-        plot_bgcolor="#fff",
-        paper_bgcolor="white",
+        plot_bgcolor=CHART_BACKGROUND_COLOR,
+        paper_bgcolor=CHART_BACKGROUND_COLOR,
         barmode="overlay",
-        height=max(600, len(df_plot) * 25),
-        margin=dict(l=300, r=60, t=80, b=60),
+        height=max(CHART_MIN_HEIGHT, len(df_plot) * CHART_ROW_HEIGHT),
+        margin=dict(
+            l=CHART_LEFT_MARGIN,
+            r=CHART_RIGHT_MARGIN,
+            t=CHART_TOP_MARGIN,
+            b=CHART_BOTTOM_MARGIN,
+        ),
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
@@ -78,9 +109,13 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
 
 
 def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
-    """Create a ranking chart using only the user's scores, sorted by user's ranking.
+    """Create a ranking chart using only the user's scores.
 
-    comparison: DataFrame with at least ['Song','Your Score']
+    Args:
+        comparison: DataFrame with at least ['Song', 'Your Score']
+
+    Returns:
+        Plotly Figure with horizontal bar chart showing user's scores
     """
     if comparison is None or comparison.empty:
         return go.Figure()
@@ -97,9 +132,13 @@ def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
             marker=dict(
                 color=df_plot["Your Score"],
                 colorscale="Viridis",
-                line=dict(width=0),  # no border
+                line=dict(width=0),
                 showscale=True,
-                colorbar=dict(title=dict(text="Your Score", font=dict(size=12)), thickness=12, len=0.7),
+                colorbar=dict(
+                    title=dict(text="Your Score", font=dict(size=CHART_LABEL_FONT_SIZE)),
+                    thickness=12,
+                    len=0.7,
+                ),
             ),
             hovertemplate="<b>%{y}</b><br>Your Score: %{x:.2f}<extra></extra>",
         )
@@ -110,16 +149,21 @@ def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
             "text": "Your Complete Ranking",
             "x": 0.5,
             "xanchor": "center",
-            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+            "font": {"size": CHART_TITLE_FONT_SIZE, "color": CHART_PRIMARY_COLOR, "family": CHART_FONT_FAMILY},
         },
         xaxis_title="Your Score",
         yaxis_title="",
-        xaxis=dict(range=[0, 10.5], showgrid=True, gridcolor="rgba(0,0,0,0.06)"),
+        xaxis=dict(range=[0, SCORE_DISPLAY_MAX], showgrid=True, gridcolor=CHART_GRID_COLOR),
         yaxis=dict(showgrid=False),
-        plot_bgcolor="#fff",
-        paper_bgcolor="white",
-        height=max(600, len(df_plot) * 25),
-        margin=dict(l=300, r=60, t=80, b=60),
+        plot_bgcolor=CHART_BACKGROUND_COLOR,
+        paper_bgcolor=CHART_BACKGROUND_COLOR,
+        height=max(CHART_MIN_HEIGHT, len(df_plot) * CHART_ROW_HEIGHT),
+        margin=dict(
+            l=CHART_LEFT_MARGIN,
+            r=CHART_RIGHT_MARGIN,
+            t=CHART_TOP_MARGIN,
+            b=CHART_BOTTOM_MARGIN,
+        ),
         showlegend=False,
     )
 
@@ -127,11 +171,18 @@ def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
 
 
 def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
-    """Top-10 chart: outside-left labels show medal, rank, title, and score."""
+    """Create a top 10 chart with medals and enhanced labels.
+
+    Args:
+        avg_scores: DataFrame with columns ['Song', 'Average Score', 'Rank']
+
+    Returns:
+        Plotly Figure showing top 10 songs with visual emphasis on podium positions
+    """
     if avg_scores.empty:
         return go.Figure()
 
-    top10 = avg_scores.head(10).sort_values("Average Score", ascending=True)
+    top10 = avg_scores.head(TOP_N_DISPLAY).sort_values("Average Score", ascending=True)
 
     fig = go.Figure()
     fig.add_trace(
@@ -149,10 +200,12 @@ def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
     medal = {1: "🥇", 2: "🥈", 3: "🥉"}
 
     def label_for_row(row):
+        """Generate label with medal, rank, song name, and score."""
         r = int(row["Rank"])
         return f"{medal.get(r, '')} #{r}  {row['Song']}  •  {row['Average Score']:.2f}"
 
     def size_for_rank(r):
+        """Determine font size based on rank (larger for top 3)."""
         r = int(r)
         return 20 if r == 1 else 18 if r == 2 else 16 if r == 3 else 13
 

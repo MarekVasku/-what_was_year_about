@@ -204,7 +204,9 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         comparison_display = pd.DataFrame()
         # If user provided an email but no votes found, show message
         if user_email_prefix:
-            recommendations_display = f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
+            recommendations_display = (
+                f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
+            )
 
     return DashboardData(
         overview=overview,

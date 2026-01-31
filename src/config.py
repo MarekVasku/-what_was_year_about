@@ -101,3 +101,35 @@ CLUSTERING_METHOD = "kmeans"
 CLUSTERING_N_CLUSTERS = 3
 DIMENSIONALITY_REDUCTION_METHOD = "tsne"
 STANDARDIZE_FEATURES = True
+
+# ============================================================================
+# VISUALIZATION CONSTANTS
+# ============================================================================
+
+# Chart dimensions
+CHART_MIN_HEIGHT = 600
+CHART_ROW_HEIGHT = 25
+CHART_LEFT_MARGIN = 300
+CHART_RIGHT_MARGIN = 60
+CHART_TOP_MARGIN = 80
+CHART_BOTTOM_MARGIN = 60
+
+# Chart colors
+CHART_PRIMARY_COLOR = "#1a1a1a"
+CHART_BACKGROUND_COLOR = "white"
+CHART_GRID_COLOR = "rgba(0,0,0,0.06)"
+CHART_USER_SCORE_COLOR = "rgba(255, 99, 71, 0.8)"
+
+# Chart font
+CHART_FONT_FAMILY = "Inter"
+CHART_TITLE_FONT_SIZE = 24
+CHART_LABEL_FONT_SIZE = 12
+
+# Score ranges
+SCORE_MIN = 0
+SCORE_MAX = 10
+SCORE_DISPLAY_MAX = 10.5
+
+# Ranking display
+TOP_N_DISPLAY = 10  # Number of songs to show in spotlight
+PODIUM_TOP_N = 3  # Number of top positions to show on podium
