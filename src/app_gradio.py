@@ -78,7 +78,7 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
             )
             email_input = gr.Textbox(
                 label="Your email prefix",
-                placeholder="e.g., john.doe (without @gmail.com)",
+                placeholder="e.g., macdemarco (without @gmail.com)",
                 show_label=True,
                 scale=2,
                 info="Optional - only if you participated in the survey",
@@ -195,8 +195,7 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
 
     gr.Markdown("## 🎵 Your Music Taste Recommendations")
     warning_recommendations = gr.Markdown(
-        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>"
-        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to get personalized recommendations.</p>"
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ Enter your email prefix above to unlock personalized insights.</p>"
     )
     gr.Markdown(
         "_AI-powered recommendations based on your top-rated songs. "
