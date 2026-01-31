@@ -25,17 +25,24 @@ DATA_CACHE = CachedDataLoader(
 
 
 def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.DataFrame]:
-    """Compute per-song average scores with tied ranks.
+    """Compute per-song average scores with tied ranks (competition ranking).
 
-    Inputs:
-        df: Raw Google Sheet DataFrame where the first 2 columns are metadata
-            (Timestamp, Email address) and remaining columns are song titles with scores.
+    This function processes raw voting data and computes:
+    - Average score per song across all voters
+    - Tied ranks using competition ranking (e.g., 1, 1, 3, 4...)
+    - Sorted ordering by rank, then score, then song name
+
+    Args:
+        df: Raw Google Sheet DataFrame where:
+            - First 2 columns are metadata (Timestamp, Email address)
+            - Remaining columns are song titles with numeric scores (1-10)
 
     Returns:
-        (df_raw, avg_scores) where:
-        - df_raw: the numeric-coerced copy of input (or None if input invalid)
-        - avg_scores: DataFrame with columns [Song, Average Score, Rank]
-          Rank uses competition ranking (ties share the same rank, e.g., 1,1,3,4...)
+        Tuple containing:
+        - df_raw: Numeric-coerced copy of input DataFrame (or None if input invalid)
+        - avg_scores: DataFrame with columns ['Song', 'Average Score', 'Rank']
+          where Rank uses competition ranking (ties share same rank)
+          Empty DataFrame if input is invalid or has no songs
     """
     if df is None or df.empty or len(df.columns) < 3:
         return df, pd.DataFrame(columns=["Song", "Average Score"])
@@ -146,20 +153,35 @@ def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataF
     """Get votes for a specific user by their email prefix.
 
     Args:
-        df: Raw dataframe with votes
-        email_prefix: User's email prefix (before @)
+        df: Raw dataframe with votes (must have 'Email address' column)
+        email_prefix: User's email prefix (the part before @)
 
     Returns:
-        tuple[user's votes as DataFrame, error message or None]
+        Tuple containing:
+        - DataFrame with user's votes (columns: 'Song', 'Your Score')
+        - Error message string, or None if successful
     """
     if df is None or df.empty:
-        return pd.DataFrame(), "No data available"
+        return pd.DataFrame(), "No voting data available. Please try again later."
 
-    # Find row where Email address column matches the prefix
-    user_row = df[df["Email address"].str.lower().str.split("@").str[0] == email_prefix.lower()]
+    if not email_prefix or not email_prefix.strip():
+        return pd.DataFrame(), "Please provide a valid email prefix."
+
+    # Validate email address column exists
+    if "Email address" not in df.columns:
+        return pd.DataFrame(), "Data format error: Email address column not found."
+
+    # Find row where Email address column matches the prefix (case-insensitive)
+    try:
+        user_row = df[df["Email address"].str.lower().str.split("@").str[0] == email_prefix.lower().strip()]
+    except Exception as e:
+        return pd.DataFrame(), f"Error searching for user: {str(e)}"
 
     if user_row.empty:
-        return pd.DataFrame(), f"No votes found for {email_prefix}"
+        return (
+            pd.DataFrame(),
+            f"No votes found for '{email_prefix}'. Please check your email prefix (the part before @).",
+        )
 
     # Get just the song scores (columns 2 onwards)
     user_votes = user_row.iloc[:, 2:].T.reset_index()
@@ -173,25 +195,27 @@ def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataF
 
 
 def compare_user_votes(email_prefix: str, year: int = 2024) -> tuple[pd.DataFrame, str | None]:
-    """Compare a user's votes against the average scores.
+    """Compare a user's votes against the average scores for a given year.
 
     Args:
-        email_prefix: User's email prefix (before @)
-        year: Year to load data for (2019, 2023, or 2024)
+        email_prefix: User's email prefix (the part before @)
+        year: Year to load data for (must be in SUPPORTED_YEARS: 2019, 2023, or 2024)
 
     Returns:
-        (comparison, error):
-        - comparison: DataFrame with ['Song','Average Score','Your Score','Difference']
-          sorted by absolute Difference descending; empty on error/none
-        - error: None on success; user-friendly message otherwise
+        Tuple containing:
+        - DataFrame with columns ['Song', 'Average Score', 'Your Score', 'Difference']
+          sorted by absolute Difference descending; empty on error
+        - Error message string, or None if successful
     """
     try:
         df = _load_year_df(year)
-        if df is None:
-            return pd.DataFrame(), "No data available"
+        if df is None or df.empty:
+            return pd.DataFrame(), f"No voting data available for year {year}."
+
         df_raw, avg_scores = compute_scores(df)
-        if df_raw is None:
-            return pd.DataFrame(), "Error computing scores"
+        if df_raw is None or avg_scores.empty:
+            return pd.DataFrame(), "Error computing score statistics."
+
         user_votes, error = get_user_votes(df_raw, email_prefix)
 
         if error:
@@ -200,7 +224,7 @@ def compare_user_votes(email_prefix: str, year: int = 2024) -> tuple[pd.DataFram
         # Merge user votes with average scores
         comparison = pd.merge(avg_scores, user_votes, on="Song", how="right")
 
-        # Add difference column
+        # Add difference column (your score minus average)
         comparison["Difference"] = comparison["Your Score"] - comparison["Average Score"]
 
         # Sort by absolute difference (biggest differences first)
@@ -208,8 +232,10 @@ def compare_user_votes(email_prefix: str, year: int = 2024) -> tuple[pd.DataFram
 
         return comparison, None
 
+    except ValueError as e:
+        return pd.DataFrame(), f"Invalid year selected: {str(e)}"
     except Exception as e:
-        return pd.DataFrame(), str(e)
+        return pd.DataFrame(), f"Unexpected error: {str(e)}"
 
 
 def _get_data_uncached(user_email_prefix: str = "", year: int = 2024):
@@ -342,7 +368,14 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
         # MDS preserves distances between points and is fully deterministic
         from sklearn.manifold import MDS  # type: ignore
 
-        mds = MDS(n_components=2, random_state=42, dissimilarity="euclidean", normalized_stress="auto", n_init=1)  # type: ignore
+        mds = MDS(
+            n_components=2,
+            random_state=42,
+            metric_mds=True,  # Use metric_mds parameter for sklearn compatibility
+            normalized_stress="auto",
+            n_init=1,
+            init="classical_mds",  # Set explicit init to avoid future warning
+        )
         coords_2d = mds.fit_transform(df_scaled)  # type: ignore
 
         # Canonicalize location/scale so axes are consistent
