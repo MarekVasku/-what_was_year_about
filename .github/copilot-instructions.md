@@ -10,9 +10,9 @@ A **Gradio web app** deployed on Hugging Face Spaces for visualizing yearly musi
 ### Multi-Year Support Pattern
 The app supports **multiple years (2019, 2023, 2024)** with different data formats:
 - **2024**: Modern format with voter-row matrix (Timestamp, Email, then one column per song)
-- **2019/2023**: Legacy formats that get normalized via `_standardize_legacy_votes()` in [data_utils.py](src/data_utils.py#L50-L170)
-- Data fetching: `fetch_data(year)` in [load_data.py](src/load_data.py#L48) handles all years
-- Year selector in UI controlled via `year_selector` dropdown in [app_gradio.py](src/app_gradio.py)
+- **2019/2023**: Legacy formats that get normalized via `_standardize_legacy_votes()` in `src/data_utils.py`
+- Data fetching: `fetch_data(year)` in `src/load_data.py` handles all years
+- Year selector in UI controlled via `year_selector` dropdown in `src/app_gradio.py`
 
 ### Core Data Pipeline
 ```
@@ -21,14 +21,14 @@ Google Sheets → gspread → DataFrame → compute_scores() → avg_scores + ra
                           user email filtering → comparison DataFrame → LLM insights
 ```
 
-1. **Data Loading** ([load_data.py](src/load_data.py)): `fetch_data(year)` authenticates via service account credentials (env var `GOOGLE_SHEETS_CREDENTIALS` or `credentials.json` file) and loads year-specific sheets
-2. **Score Computation** ([data_utils.py](src/data_utils.py#L20-L50)): `compute_scores()` calculates average scores with **tied ranking** (competition rank: 1,1,3,4...) using `rank(method="min")`
-3. **User Comparison** ([data_utils.py](src/data_utils.py#L170-L220)): `compare_user_votes(email_prefix, year)` filters user votes by email prefix and computes difference vs averages
-4. **Visualization** ([visuals.py](src/visuals.py)): All chart functions (`make_*_chart()`) return `plotly.graph_objects.Figure` instances
-5. **Dashboard Generation** ([dashboard.py](src/dashboard.py)): `create_dashboard(user_email_prefix, ranking_view, year)` orchestrates data + charts with LRU caching
+1. **Data Loading** (`src/load_data.py`): `fetch_data(year)` authenticates via service account credentials (env var `GOOGLE_SHEETS_CREDENTIALS` or `credentials.json` file) and loads year-specific sheets
+2. **Score Computation** (`src/data_utils.py`): `compute_scores()` calculates average scores with **tied ranking** (competition rank: 1,1,3,4...) using `rank(method="min")`
+3. **User Comparison** (`src/data_utils.py`): `compare_user_votes(email_prefix, year)` filters user votes by email prefix and computes difference vs averages
+4. **Visualization** (`src/visuals.py`): All chart functions (`make_*_chart()`) return `plotly.graph_objects.Figure` instances
+5. **Dashboard Generation** (`src/dashboard.py`): `create_dashboard(user_email_prefix, ranking_view, year)` orchestrates data + charts with LRU caching
 
 ### LLM Integration (Groq API)
-- **Enable via env**: `GROQ_API_KEY` must be set ([llm_implementation.py](src/llm_implementation.py#L10))
+- **Enable via env**: `GROQ_API_KEY` must be set (`src/llm_implementation.py`)
 - **Three models for different tasks** (overrideable via env):
   - `MODEL_BLURB`: Short summaries (default: `llama-3.1-8b-instant`)
   - `MODEL_ANALYSIS`: User voting patterns (default: `openai/gpt-oss-120b`)
@@ -80,7 +80,7 @@ uv pip compile pyproject.toml -o requirements.txt
 ## Project-Specific Conventions
 
 ### Google Sheets Credential Handling
-Three-tier fallback system in [load_data.py](src/load_data.py#L55-L78):
+Three-tier fallback system in `src/load_data.py`:
 1. `GOOGLE_SHEETS_CREDENTIALS` env var (JSON string) - preferred for Hugging Face Spaces
 2. `GOOGLE_APPLICATION_CREDENTIALS` env var (file path)
 3. `credentials.json` in project root (local development)
@@ -93,7 +93,7 @@ Use **competition ranking** (`rank(method="min")`) for ties:
 # Example: scores [9.5, 9.5, 8.0] → ranks [1, 1, 3]
 avg_scores["Rank"] = avg_scores["Average Score"].rank(method="min", ascending=False).astype(int)
 ```
-Display all tied songs together in podium (see [dashboard.py](src/dashboard.py#L45-L55))
+Display all tied songs together in podium (see `src/dashboard.py`)
 
 ### Data Caching Pattern
 Use `@lru_cache(maxsize=10)` for expensive operations accepting multiple years/users:
@@ -119,7 +119,7 @@ def make_*_chart(df: pd.DataFrame) -> go.Figure:
 ```
 
 ### Custom CSS Classes (Gradio)
-Key CSS classes in [app_gradio.py](src/app_gradio.py#L24-L89):
+Key CSS classes in `src/app_gradio.py`:
 - `.hero`: Purple gradient header with centered content
 - `.overview-box`: Light panel for winner/top-3 display (forces dark text on light bg)
 - `.model-note`: Small gray text for LLM model attribution
@@ -134,7 +134,7 @@ def get_user_votes(df: pd.DataFrame, email_prefix: str):
 ```
 
 ### Feedback System
-Dual submission in [app_gradio.py](src/app_gradio.py#L370-L516):
+Dual submission in `src/app_gradio.py`:
 1. **Primary**: POST to `WEBHOOK_URL` (Zapier → email, works in Hugging Face)
 2. **Fallback**: SMTP via Gmail (local dev only)
 3. **Backup**: Always append to `feedback_log.txt` for reliability
@@ -150,30 +150,30 @@ Expected columns (2024 format):
 Legacy formats (2019/2023) get normalized via column detection in `_standardize_legacy_votes()`
 
 ### Groq API Interaction
-- All LLM calls go through internal `call_groq()` function (see [llm_implementation.py](src/llm_implementation.py))
+- All LLM calls go through internal `call_groq()` function (see `src/llm_implementation.py`)
 - JSON parsing robustness: handles markdown-wrapped JSON (`json```...```) from LLMs
 - Fallback handling: Returns empty/default responses on API failure, never crashes UI
 
 ### Hugging Face Spaces Deployment
-- **Runtime**: Python 3.11 ([runtime.txt](runtime.txt))
-- **Metadata**: Frontmatter in [README.md](README.md) defines `app_file: src/app_gradio.py`
+- **Runtime**: Python 3.11 (`runtime.txt`)
+- **Metadata**: Frontmatter in `README.md` defines `app_file: src/app_gradio.py`
 - **Secrets**: Set in Space settings, accessed via `os.environ.get()`
 
 ## Common Pitfalls
 
 1. **Rankings with ties**: Always use `rank(method="min")` and display all tied songs
 2. **Empty DataFrames**: Check `df.empty` before operations; return empty figures from chart functions
-3. **Credential paths**: Use `BASE_DIR` constant, never `os.path.dirname(__file__)` directly in [load_data.py](src/load_data.py#L8)
-4. **Year normalization**: Handle 2019/2023 legacy formats differently from 2024 in [data_utils.py](src/data_utils.py#L50-L170)
-5. **LLM prompt constraints**: User analysis must be 250-300 words, no emojis, no hero language (see [llm_implementation.py](src/llm_implementation.py#L90-L105))
+3. **Credential paths**: Use `BASE_DIR` constant, never `os.path.dirname(__file__)` directly in `src/load_data.py`
+4. **Year normalization**: Handle 2019/2023 legacy formats differently from 2024 in `src/data_utils.py`
+5. **LLM prompt constraints**: User analysis must be 250-300 words, no emojis, no hero language (see `src/llm_implementation.py`)
 6. **Mobile CSS**: Test responsive breakpoints when modifying layout
 
 ## Key Files Reference
 
-- [src/app_gradio.py](src/app_gradio.py): Gradio UI entry point, event handlers, custom CSS
-- [src/dashboard.py](src/dashboard.py): Main orchestration function `create_dashboard()`
-- [src/data_utils.py](src/data_utils.py): Score computation, user filtering, clustering, caching
-- [src/load_data.py](src/load_data.py): Google Sheets authentication and data fetching
-- [src/llm_implementation.py](src/llm_implementation.py): Groq API integration for insights/recommendations
-- [src/visuals.py](src/visuals.py): All Plotly chart generation functions
-- [pyproject.toml](pyproject.toml): Dependencies and ruff config (line-length: 120, target: py311)
+- `src/app_gradio.py`: Gradio UI entry point, event handlers, custom CSS
+- `src/dashboard.py`: Main orchestration function `create_dashboard()`
+- `src/data_utils.py`: Score computation, user filtering, clustering, caching
+- `src/load_data.py`: Google Sheets authentication and data fetching
+- `src/llm_implementation.py`: Groq API integration for insights/recommendations
+- `src/visuals.py`: All Plotly chart generation functions
+- `pyproject.toml`: Dependencies and ruff config (line-length: 120, target: py311)
