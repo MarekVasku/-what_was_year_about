@@ -20,7 +20,7 @@ try:
 except Exception:
     # Sklearn not available or caused import error; features depending on it will be disabled
     SKLEARN_AVAILABLE = False
-    StandardScaler = None  # type: ignore
+    STANDARD_SCALER = None  # type: ignore
 
 
 def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.DataFrame]:
@@ -168,7 +168,7 @@ def get_data_cached(user_email_prefix: str = "") -> tuple[
         # If user email provided, try to get comparison (but don't fail if user not found)
         comparison = None
         if user_email_prefix:
-            comparison, user_error = compare_user_votes(user_email_prefix)
+            comparison, _user_error = compare_user_votes(user_email_prefix)
             # If user not found, we still want to show community charts
             # comparison will be None, dashboard will display user-not-found message but show community data
 
