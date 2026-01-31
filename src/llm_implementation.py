@@ -1,6 +1,12 @@
 import pandas as pd
 
-from config import DEFAULT_YEAR, SPREADSHEET_CONFIG
+from config import (
+    DEFAULT_YEAR,
+    SIGNIFICANT_DIFFERENCE_THRESHOLD,
+    SPREADSHEET_CONFIG,
+    TOP_DISAGREEMENTS_COUNT,
+    TOP_SONGS_DISPLAY,
+)
 from credentials import authenticate
 from prompt_templates import (
     render_recommendations_prompt,
@@ -102,15 +108,15 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
     # Calculate significant differences
     comparison_df = comparison_df.copy()
     comparison_df["Abs_Diff"] = abs(comparison_df["Difference"])
-    significant_diffs = comparison_df.nlargest(3, "Abs_Diff")
+    significant_diffs = comparison_df.nlargest(TOP_DISAGREEMENTS_COUNT, "Abs_Diff")
 
     # Extract top songs
-    user_top = comparison_df.nlargest(3, "Your Score")
-    overall_top = comparison_df.nlargest(3, "Average Score")
+    user_top = comparison_df.nlargest(TOP_SONGS_DISPLAY, "Your Score")
+    overall_top = comparison_df.nlargest(TOP_SONGS_DISPLAY, "Average Score")
 
     # Calculate voting pattern statistics
-    higher_count = (comparison_df["Difference"] > 1).sum()
-    lower_count = (comparison_df["Difference"] < -1).sum()
+    higher_count = (comparison_df["Difference"] > SIGNIFICANT_DIFFERENCE_THRESHOLD).sum()
+    lower_count = (comparison_df["Difference"] < -SIGNIFICANT_DIFFERENCE_THRESHOLD).sum()
 
     # Extract biggest differences
     biggest_over_data, biggest_under_data = _find_biggest_differences(significant_diffs)

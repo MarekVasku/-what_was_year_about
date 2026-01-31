@@ -104,8 +104,13 @@ FEEDBACK_RECEIVER_EMAIL = "maravasku@gmail.com"
 FEEDBACK_SUBMISSION_TIMEOUT = 10  # seconds
 
 # ============================================================================
-# CLUSTERING
+# LLM ANALYSIS THRESHOLDS
 # ============================================================================
+
+# Score difference thresholds for voting pattern analysis
+SIGNIFICANT_DIFFERENCE_THRESHOLD = 1.0  # Votes differing by more than this are considered significant
+TOP_DISAGREEMENTS_COUNT = 3  # Number of biggest disagreements to analyze
+TOP_SONGS_DISPLAY = 3  # Number of top songs to compare
 
 CLUSTERING_METHOD = "kmeans"
 CLUSTERING_N_CLUSTERS = 3

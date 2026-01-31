@@ -200,26 +200,12 @@ def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
     medal = {1: "🥇", 2: "🥈", 3: "🥉"}
 
     def label_for_row(row):
-        """Generate display label with medal, rank, song name, and score.
-
-        Args:
-            row: DataFrame row with 'Rank', 'Song', and 'Average Score' columns
-
-        Returns:
-            Formatted string with emoji medal, rank number, song title, and score
-        """
+        """Generate display label with medal, rank, and score."""
         r = int(row["Rank"])
         return f"{medal.get(r, '')} #{r}  {row['Song']}  •  {row['Average Score']:.2f}"
 
     def size_for_rank(r):
-        """Determine font size based on ranking position.
-
-        Args:
-            r: Integer rank (1 = first place, 2 = second, etc.)
-
-        Returns:
-            Font size in points (larger for top 3 positions)
-        """
+        """Return font size based on rank (larger for top 3)."""
         r = int(r)
         return 20 if r == 1 else 18 if r == 2 else 16 if r == 3 else 13
 
