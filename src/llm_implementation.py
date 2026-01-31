@@ -1,22 +1,25 @@
-import os
-
 import pandas as pd
 
-SPREADSHEET_NAME = "What was 2024 about - responses"
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-CREDENTIALS_PATH = os.path.join(BASE_DIR, "credentials.json")
+from config import DEFAULT_YEAR, SPREADSHEET_CONFIG
+from credentials import authenticate
+from prompt_templates import (
+    render_recommendations_prompt,
+    render_song_blurb_prompt,
+    render_voting_analysis_prompt,
+)
+from settings import settings
 
 # Require an API key
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-LLM_ENABLED = bool(GROQ_API_KEY)
+GROQ_API_KEY = settings.groq_api_key
+LLM_ENABLED = settings.llm_enabled
 
 # Default model fallbacks (can be overridden via env)
-MODEL_BLURB = os.environ.get("MODEL_BLURB", "llama-3.1-8b-instant")
-MODEL_ANALYSIS = os.environ.get("MODEL_ANALYSIS", "openai/gpt-oss-120b")
-MODEL_JSON = os.environ.get("MODEL_JSON", "moonshotai/kimi-k2-instruct")
+MODEL_BLURB = settings.model_blurb
+MODEL_ANALYSIS = settings.model_analysis
+MODEL_JSON = settings.model_json
 
 # Legacy single-model env for backward compatibility
-GROQ_MODEL = os.environ.get("GROQ_MODEL", MODEL_BLURB)
+GROQ_MODEL = settings.groq_model or MODEL_BLURB
 
 def fetch_df() -> pd.DataFrame:
     """Fetch Google Sheet into a DataFrame.
@@ -25,22 +28,8 @@ def fetch_df() -> pd.DataFrame:
     for platforms like Hugging Face Spaces. Falls back to credentials.json file
     in the project root if the env var is not provided or parsing fails.
     """
-    import gspread
-    import json
-
-    gc = None
-    creds_json = os.environ.get("GOOGLE_SHEETS_CREDENTIALS")
-    if creds_json:
-        try:
-            creds_dict = json.loads(creds_json)
-            gc = gspread.service_account_from_dict(creds_dict)
-        except Exception:
-            # Fall back to file if env var is malformed
-            gc = gspread.service_account(filename=CREDENTIALS_PATH)
-    else:
-        gc = gspread.service_account(filename=CREDENTIALS_PATH)
-
-    sh = gc.open(SPREADSHEET_NAME).sheet1
+    gc = authenticate()
+    sh = gc.open(SPREADSHEET_CONFIG[DEFAULT_YEAR]).sheet1
     return pd.DataFrame(sh.get_all_records())
 
 def get_top_song(df: pd.DataFrame, meta_cols: int = 2) -> tuple[str, float]:
@@ -55,10 +44,7 @@ def get_top_song(df: pd.DataFrame, meta_cols: int = 2) -> tuple[str, float]:
     return top_song, top_score
 
 def make_prompt(song: str, avg: float) -> str:
-    return (
-        f"Write one short sentence: The favourite song was {song} with an average rating of {avg:.2f}, "
-        f"then one more sentence about that musical taste jokingly"
-    )
+    return render_song_blurb_prompt(song_name=song, avg_score=avg)
 
 def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
     """Analyze how a user's votes differ from the average and generate a summary."""
@@ -79,38 +65,54 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
     higher_count = (comparison_df['Difference'] > 1).sum()
     lower_count = (comparison_df['Difference'] < -1).sum()
 
-    # Create prompt for LLM
+    # Create prompt for LLM using templates
     # Find biggest positive and negative differences
-    biggest_over = significant_diffs[significant_diffs['Difference'] > 0].iloc[0] if not significant_diffs[significant_diffs['Difference'] > 0].empty else None
-    biggest_under = significant_diffs[significant_diffs['Difference'] < 0].iloc[0] if not significant_diffs[significant_diffs['Difference'] < 0].empty else None
+    biggest_over = (
+        significant_diffs[significant_diffs['Difference'] > 0].iloc[0]
+        if not significant_diffs[significant_diffs['Difference'] > 0].empty
+        else None
+    )
+    biggest_under = (
+        significant_diffs[significant_diffs['Difference'] < 0].iloc[0]
+        if not significant_diffs[significant_diffs['Difference'] < 0].empty
+        else None
+    )
 
-    over_text = f"You're absolutely swooning over '{biggest_over['Song']}' with a {biggest_over['Your Score']:.1f} (while everyone else gave it a modest {biggest_over['Average Score']:.1f})" if biggest_over is not None else ""
-    under_text = f"and giving '{biggest_under['Song']}' a {biggest_under['Your Score']:.1f} (compared to the crowd's love at {biggest_under['Average Score']:.1f})" if biggest_under is not None else ""
+    biggest_over_data = None
+    if biggest_over is not None:
+        biggest_over_data = {
+            "song": biggest_over["Song"],
+            "score": float(biggest_over["Your Score"]),
+            "avg_score": float(biggest_over["Average Score"]),
+        }
 
-    prompt = f"""Write a friendly, conversational analysis that directly addresses the voter (use 'you' and 'your'). Keep it grounded and observational about preferences and results. Aim for 250–300 words.
+    biggest_under_data = None
+    if biggest_under is not None:
+        biggest_under_data = {
+            "song": biggest_under["Song"],
+            "score": float(biggest_under["Your Score"]),
+            "avg_score": float(biggest_under["Average Score"]),
+        }
 
-Tone constraints (important):
-- No hype or hero language. Avoid praise like "brave", "bold", "fearless", "iconic", or marathon-style metaphors.
-- Do not judge the taste; treat it as preference, not achievement.
-- Light, good‑natured teasing is fine, but keep it respectful and specific.
-- Focus on what the votes show: over/under compared to the group, patterns, and concrete examples.
+    disagreements = [
+        (
+            row["Song"],
+            float(row["Your Score"]),
+            float(row["Average Score"]),
+            float(row["Difference"]),
+        )
+        for _, row in significant_diffs.iterrows()
+    ]
 
-Formatting constraints:
-- Do not use emojis or emoticons.
-- Do not include headings or markdown titles; write plain paragraphs only.
-
-Key points to hit with some gentle snark:
-- {over_text}
-- {under_text}
-- Your top picks ({', '.join(user_top['Song'].tolist())}) vs what everyone else is raving about ({', '.join(overall_top['Song'].tolist())})
-- You rated {higher_count} songs higher and {lower_count} songs lower than the crowd - interesting pattern there!
-
-Tone guide: Think "your music-obsessed friend who loves to playfully debate taste but ultimately celebrates your unique preferences". Mix gentle teasing with genuine appreciation for their bold choices. Throw in some music-nerd references if they fit."""
-
-    for _, row in significant_diffs.iterrows():
-        diff = row['Difference']
-        direction = 'higher' if diff > 0 else 'lower'
-        prompt += f"\n- Rated '{row['Song']}' {abs(diff):.1f} points {direction} than the crowd"
+    prompt = render_voting_analysis_prompt(
+        biggest_over=biggest_over_data,
+        biggest_under=biggest_under_data,
+        top_user_songs=user_top["Song"].tolist(),
+        top_community_songs=overall_top["Song"].tolist(),
+        higher_count=int(higher_count),
+        lower_count=int(lower_count),
+        disagreements=disagreements,
+    )
 
     # Use the long-form analysis model as recommended
     # Request a longer output and auto-finish if the model cuts mid-sentence
@@ -191,36 +193,16 @@ def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) ->
     if not top5:
         return []
 
+    # Sanitize song names to prevent JSON parsing issues with escape sequences
+    def sanitize_song(song: str) -> str:
+        """Remove problematic characters from song names."""
+        return song.replace('\\', '/').replace('\n', ' ').replace('\r', ' ').strip()
+    
+    top5_clean = [sanitize_song(s) for s in top5]
+    bottom5_clean = [sanitize_song(s) for s in bottom5]
+
     # Build prompt for artist/genre recommendations (more grounded, less hallucination)
-    prompt = f"""Based on someone's music taste, suggest {n} artists or music genres they should explore in 2025.
-
-Their TOP 5 favorite songs from 2024:
-{chr(10).join(f"- {song}" for song in top5)}
-
-Their BOTTOM 5 least favorite songs from 2024:
-{chr(10).join(f"- {song}" for song in bottom5)}
-
-Analyze the QUALITIES in their top picks (mood, energy, production style, themes, etc.) and suggest artists or genres that match those qualities.
-
-Respond ONLY with a valid JSON array. Each object must have exactly these fields:
-- "song": the artist name OR genre/style (e.g., "Bicep" or "Melodic Techno")
-- "artist": leave this as an empty string ""
-- "reason": a brief (25-35 words) explanation connecting specific qualities from their top 5 to this recommendation
-
-Example format:
-[
-  {{"song": "Fred again..", "artist": "", "reason": "Your top picks show a love for emotional electronic music with organic textures. Fred's live energy and melodic approach would resonate with your taste."}},
-  {{"song": "Indie Folk with Electronic Elements", "artist": "", "reason": "The introspective lyrics and layered production in your favorites suggest you'd enjoy this genre blend."}}
-]
-
-Important:
-- Focus on REAL artists or established genres/styles
-- Base suggestions on specific qualities from their top 5 (mood, tempo, production, vocals, etc.)
-- Avoid suggesting anything similar to their bottom 5
-- Be specific in your reasoning - mention actual qualities you noticed
-- Prioritize artists who are new in 2025 OR released a notable album/EP in 2025. If suggesting a genre, mention a 2025 wave or trend.
-- When possible, reference 2025 releases succinctly (e.g., “new 2025 LP showcases …”).
-- Return valid JSON only, no additional text"""
+    prompt = render_recommendations_prompt(top_songs=top5_clean, bottom_songs=bottom5_clean, n=n)
 
     try:
         # Structured JSON output model, lower temperature
@@ -231,10 +213,34 @@ Important:
         import re
 
         # Extract JSON array if wrapped in markdown or other text
-        json_match = re.search(r'\[.*\]', response, re.DOTALL)
+        # Try to find balanced brackets to handle complex content
+        json_match = re.search(r'\[\s*\{.*\}\s*\]', response, re.DOTALL)
         if json_match:
             json_str = json_match.group(0)
-            recommendations = json.loads(json_str)
+            try:
+                recommendations = json.loads(json_str)
+            except json.JSONDecodeError:
+                # Try with re.escape to handle backslashes in content
+                # Find first [ and last ] and extract everything between
+                start_idx = response.find('[')
+                end_idx = response.rfind(']')
+                if start_idx >= 0 and end_idx > start_idx:
+                    json_str = response[start_idx:end_idx + 1]
+                    try:
+                        recommendations = json.loads(json_str)
+                    except json.JSONDecodeError as e:
+                        # If still failing, return empty with helpful error
+                        return [{
+                            'song': 'Unable to parse recommendations',
+                            'artist': '',
+                            'reason': f'JSON parsing error: {str(e)[:100]}'
+                        }]
+                else:
+                    return [{
+                        'song': 'Unable to analyze taste',
+                        'artist': '',
+                        'reason': 'Could not find JSON in AI response.'
+                    }]
 
             # Validate structure
             if isinstance(recommendations, list):
@@ -259,7 +265,7 @@ Important:
         return [{
             'song': 'Error generating recommendations',
             'artist': '',
-            'reason': f'An error occurred: {str(e)}'
+            'reason': f'An error occurred: {str(e)[:100]}'
         }]
 
 

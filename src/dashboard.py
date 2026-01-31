@@ -7,6 +7,7 @@ from llm_implementation import (
     generate_recommendations,
     get_user_voting_insight,
 )
+from models import DashboardData
 from visuals import (
     make_2d_taste_map_chart,
     make_all_votes_distribution,
@@ -36,24 +37,51 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
 
     empty_fig = make_podium_chart(pd.DataFrame())
     if error:
-        return (
-            f"### ⚠️ Error Loading Data\n```\n{error}\n```",
-            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
-            pd.DataFrame(), pd.DataFrame(),
-            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
-            empty_fig,
-            "",  # recommendations_display
+        return DashboardData(
+            overview=f"### ⚠️ Error Loading Data\n```\n{error}\n```",
+            total_votes=0,
+            total_songs=0,
+            avg_of_avgs=0.0,
+            error_message=error,
+            podium_plot=empty_fig,
+            top10_plot=empty_fig,
+            distribution_plot=empty_fig,
+            all_votes_plot=empty_fig,
+            main_plot=empty_fig,
+            all_songs_table=pd.DataFrame(),
+            user_comparison_table=pd.DataFrame(),
+            disagreements_plot=empty_fig,
+            user_vs_top10_plot=empty_fig,
+            heatmap_plot=empty_fig,
+            controversy_plot=empty_fig,
+            agreeable_plot=empty_fig,
+            rating_pattern_plot=empty_fig,
+            taste_map_plot=empty_fig,
+            recommendations_display="",
         )
 
     if avg_scores.empty:
         empty_fig = make_podium_chart(pd.DataFrame())
-        return (
-            "### 📊 No Data Yet\nClick refresh to load voting results.",
-            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
-            pd.DataFrame(), pd.DataFrame(),
-            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
-            empty_fig,
-            "",  # recommendations_display
+        return DashboardData(
+            overview="### 📊 No Data Yet\nClick refresh to load voting results.",
+            total_votes=0,
+            total_songs=0,
+            avg_of_avgs=0.0,
+            podium_plot=empty_fig,
+            top10_plot=empty_fig,
+            distribution_plot=empty_fig,
+            all_votes_plot=empty_fig,
+            main_plot=empty_fig,
+            all_songs_table=pd.DataFrame(),
+            user_comparison_table=pd.DataFrame(),
+            disagreements_plot=empty_fig,
+            user_vs_top10_plot=empty_fig,
+            heatmap_plot=empty_fig,
+            controversy_plot=empty_fig,
+            agreeable_plot=empty_fig,
+            rating_pattern_plot=empty_fig,
+            taste_map_plot=empty_fig,
+            recommendations_display="",
         )
 
     # --- Overview respecting ties and listing all tied songs ---
@@ -171,23 +199,26 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
     else:
         comparison_display = pd.DataFrame()
 
-    return (
-        overview,
-        podium_chart,
-        top10_chart,
-        dist_chart,
-        all_votes_chart,
-        main_chart,
-        all_songs_table,
-        comparison_display,
-        disagreements_chart,
-        user_vs_top10_chart,
-        heatmap_chart,
-        controversy_chart,
-        agreeable_chart,
-        rating_pattern_chart,
-        taste_map_chart,
-        recommendations_display,
+    return DashboardData(
+        overview=overview,
+        total_votes=total_votes,
+        total_songs=total_songs,
+        avg_of_avgs=avg_of_avgs,
+        podium_plot=podium_chart,
+        top10_plot=top10_chart,
+        distribution_plot=dist_chart,
+        all_votes_plot=all_votes_chart,
+        main_plot=main_chart,
+        all_songs_table=all_songs_table,
+        user_comparison_table=comparison_display,
+        disagreements_plot=disagreements_chart,
+        user_vs_top10_plot=user_vs_top10_chart,
+        heatmap_plot=heatmap_chart,
+        controversy_plot=controversy_chart,
+        agreeable_plot=agreeable_chart,
+        rating_pattern_plot=rating_pattern_chart,
+        taste_map_plot=taste_map_chart,
+        recommendations_display=recommendations_display,
     )
 import plotly.express as px
 from nicegui import ui

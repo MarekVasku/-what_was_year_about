@@ -1,9 +1,9 @@
-from functools import lru_cache
-
 import numpy as np
 import pandas as pd
 
+from cache import CachedDataLoader
 from load_data import fetch_data
+from settings import settings
 import math
 
 try:
@@ -17,6 +17,13 @@ except Exception:
     KMeans = None  # type: ignore
     StandardScaler = None  # type: ignore
     TSNE = None  # type: ignore
+
+
+# Cache for data loading and processing
+DATA_CACHE = CachedDataLoader(
+    ttl_seconds=settings.cache_ttl_seconds,
+    max_size=settings.cache_max_size,
+)
 
 
 def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.DataFrame]:
@@ -216,14 +223,8 @@ def compare_user_votes(email_prefix: str, year: int = 2024) -> tuple[pd.DataFram
         return pd.DataFrame(), str(e)
 
 
-@lru_cache(maxsize=10)  # Cache for multiple years and users
-def get_data_cached(user_email_prefix: str = "", year: int = 2024):
-    """Fetch and cache data with metrics.
-    
-    Args:
-        user_email_prefix: User's email prefix for personalized data
-        year: Year to load data for (2019, 2023, or 2024)
-    """
+def _get_data_uncached(user_email_prefix: str = "", year: int = 2024):
+    """Fetch data with metrics without caching."""
     try:
         df = _load_year_df(year)
         df_raw, avg_scores = compute_scores(df)
@@ -242,6 +243,17 @@ def get_data_cached(user_email_prefix: str = "", year: int = 2024):
         return df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, None, comparison
     except Exception as e:
         return None, pd.DataFrame(), 0, 0.0, 0, str(e), None
+
+
+def get_data_cached(user_email_prefix: str = "", year: int = 2024):
+    """Fetch and cache data with metrics.
+    
+    Args:
+        user_email_prefix: User's email prefix for personalized data
+        year: Year to load data for (2019, 2023, or 2024)
+    """
+    cache_key = (user_email_prefix.lower() if user_email_prefix else "", year)
+    return DATA_CACHE.get(cache_key, lambda: _get_data_uncached(user_email_prefix, year))
 
 
 def calculate_taste_similarity(df: pd.DataFrame | None, email_prefix: str) -> pd.DataFrame:
@@ -525,6 +537,6 @@ def refresh_data():
 
     We import create_dashboard locally to avoid a circular import at module import time.
     """
-    get_data_cached.cache_clear()
+    DATA_CACHE.clear()
     from dashboard import create_dashboard
     return create_dashboard()
