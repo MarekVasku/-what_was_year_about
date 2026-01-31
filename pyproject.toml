@@ -1,6 +1,6 @@
 [project]
 name = "what_was_year_about"
-version = "0.1.2"
+version = "0.2.0.dev0"
 requires-python = ">=3.11"
 dependencies = [
     "nicegui",
@@ -11,8 +11,14 @@ dependencies = [
     "groq",
     "scikit-learn",
     "numpy>=2.3.4",
+    "pydantic-settings>=2.0",
+    "jinja2>=3.1.3",
     "pytest>=8.4.2",
     "ruff>=0.8.4",
+    "pylint>=3.0.0",
+    "matplotlib>=3.10.7",
+    "seaborn>=0.13.2",
+    "pydantic>=2.11.10",
 ]
 
 [build-system]

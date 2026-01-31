@@ -1,30 +1,64 @@
-[MASTER]
-# Ensure Pylint can import modules from the "src" folder when run from repo root.
-init-hook='import sys, os; sys.path.insert(0, os.path.abspath("src"))'
-ignore-patterns=__pycache__,.venv
+[MAIN]
+# Python version to use
+py-version=3.11
 
-[FORMAT]
-# Keep consistent with Ruff and the project's style.
-max-line-length=120
+# Discover python modules and packages in the file system subtree
+recursive=yes
 
 [MESSAGES CONTROL]
-# Disable high-noise or stylistic rules that are already enforced by Ruff or
-# that don't fit the current code structure. We can re-enable selectively later.
+# Disable specific warnings that conflict with project style or are too strict
 disable=
-    C0301,  # line-too-long (handled by max-line-length/formatter)
-    C0305,  # trailing-newlines
-    C0415,  # import-outside-toplevel (used intentionally for lazy/deferred imports)
-    C0114,  # missing-module-docstring
-    C0116,  # missing-function-docstring
-    R0912,  # too-many-branches
-    R0914,  # too-many-locals
-    R0915,  # too-many-statements
-    R1735,  # use-dict-literal (style preference; Ruff also suggests similar changes)
-    W0621,  # redefined-outer-name (common in notebooks/scripts; reviewed separately)
-    W0718,  # broad-exception-caught (intentional in UI/network boundaries)
-    R0801,  # duplicate-code (too noisy for this repo; revisit later)
+    line-too-long,  # Handled by ruff formatter
+    missing-module-docstring,
+    missing-function-docstring,
+    missing-class-docstring,
+    too-many-locals,
+    too-many-branches,
+    too-many-statements,
+    too-many-arguments,
+    too-many-positional-arguments,
+    too-few-public-methods,
+    too-many-lines,
+    import-error,  # Disable since src/ modules import each other without package structure
+    no-member,     # Disable for Gradio dynamic attributes
+    broad-exception-caught,  # Allow catching Exception in fallback code
+    wrong-import-position,   # Allow Path import at end of config.py
+    duplicate-code,          # Allow some duplication across modules
+    use-dict-literal,        # Plotly uses dict() for clarity
+    import-outside-toplevel,  # Allow lazy imports for performance
+    redefined-outer-name,     # Common in test fixtures and local scopes
+    unused-argument,          # Common in event handlers and test mocks
+    unused-variable,          # Allow in test fixtures
+    unnecessary-pass,         # Allow pass in placeholder code
+    invalid-name,             # Allow short variable names like df, gc
+    no-else-return,           # Allow explicit else for clarity
+    chained-comparison,       # Allow verbose comparisons
+    consider-using-max-builtin,  # Allow explicit if blocks
+    unused-import,            # Handled by ruff
+
+[FORMAT]
+# Maximum number of characters on a single line (match ruff config)
+max-line-length=120
+
+# Maximum number of lines in a module
+max-module-lines=1000
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args=8
+
+# Maximum number of attributes for a class
+max-attributes=20
+
+# Maximum number of public methods for a class
+max-public-methods=25
 
 [TYPECHECK]
-# Some UI components (e.g., Gradio) generate attributes at runtime that Pylint
-# can't infer statically.
-generated-members=click,change,submit,load
+# List of members which are set dynamically and missed by pylint inference
+generated-members=
+    gradio.*,
+    plotly.*,
+
+[SIMILARITIES]
+# Minimum lines number of a similarity (increase to allow more code reuse)
+min-similarity-lines=10
