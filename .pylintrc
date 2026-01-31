@@ -8,6 +8,7 @@ recursive=yes
 [MESSAGES CONTROL]
 # Disable specific warnings that conflict with project style or are too strict
 disable=
+    line-too-long,  # Handled by ruff formatter
     missing-module-docstring,
     missing-function-docstring,
     missing-class-docstring,
