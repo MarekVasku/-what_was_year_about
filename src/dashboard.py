@@ -115,7 +115,7 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
     overview = f"""### Winner
 {winner_display}
 
-Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs:.2f}
+Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs:.2f}{user_not_found_message}
 
 ### Top 3
 
@@ -197,6 +197,9 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
             recommendations_display = f"_Could not generate recommendations: {str(e)}_"
     else:
         comparison_display = pd.DataFrame()
+        # If user provided an email but no votes found, show message
+        if user_email_prefix:
+            recommendations_display = f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
 
     return DashboardData(
         overview=overview,
@@ -341,10 +344,3 @@ def show_dashboard(df):
 
         ui.plotly(fig_hist)
 
-    # **About Section**
-    with ui.row().classes("w-full p-5 bg-gray-50"):
-        ui.label("About This Dashboard").classes("text-2xl font-bold")
-        ui.label(
-            "This dashboard visualizes song ratings based on user votes. "
-            "Use the interactive filters and search bar to explore the data."
-        ).classes("text-lg text-gray-600")

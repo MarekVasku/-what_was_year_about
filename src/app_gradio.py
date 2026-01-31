@@ -1,3 +1,19 @@
+"""
+Gradio web UI for the annual "What Was [Year] About" music chart.
+
+This module wires UI components to the core dashboard generator in `dashboard.create_dashboard`.
+It intentionally keeps no business logic here; all computation, data access, and plotting
+primitives live in `data_utils.py`, `load_data.py`, `visuals.py`, and `dashboard.py`.
+
+Environment (optional):
+- WEBHOOK_URL: If set (e.g., on Hugging Face Spaces), feedback is posted via webhook
+- SMTP_EMAIL / SMTP_PASSWORD: If set locally, fallback SMTP is used for feedback
+
+Safe to run locally: `python src/app_gradio.py`
+"""
+
+from pathlib import Path
+
 import gradio as gr
 
 from config import (
@@ -160,11 +176,10 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
     gr.Markdown("_Consensus achieved. Everyone basically gave these (almost) the same score._")
     agreeable_plot = gr.Plot()
 
-    gr.Markdown("## Clustering Analysis")
+    gr.Markdown("## Taste Similarity Map")
     gr.HTML(
         "<p style='font-size: 0.85rem; line-height: 1.4; color: #6b7280; font-style: italic; margin-bottom: 1rem;'>"
-        "Clustering: K‑Means on standardized voter rating vectors. "
-        "The 2D map is an MDS visualization; closer dots ≈ more similar taste."
+        "The 2D map uses an MDS projection over standardized voting patterns; closer dots ≈ more similar taste."
         "</p>"
     )
 

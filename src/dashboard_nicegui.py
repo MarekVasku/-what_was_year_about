@@ -1,9 +1,3 @@
-"""NiceGUI experimental dashboard.
-
-This module is intentionally small: it demonstrates how the same
-data + visuals can be rendered with NiceGUI for experimentation.
-
-Run directly with: python src/dashboard_nicegui.py
 """
 
 from nicegui import ui
@@ -92,6 +86,9 @@ def build_nicegui_dashboard() -> None:
     avg_scores[["Rank", "Song", "Average Score"]].round(2).to_dict("records")
     ui.table.from_pandas(avg_scores[["Rank", "Song", "Average Score"]].round(2))
 
+This module is not used by the main Gradio app and is kept only for reference.
+Running it directly is disabled to avoid confusion.
+"""
 
 if __name__ == "__main__":
     build_nicegui_dashboard()

@@ -5,7 +5,11 @@ import plotly.graph_objects as go
 
 
 def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = None) -> go.Figure:
-    """Create main ranking chart with all songs."""
+    """Create the main ranking chart (average bars, optional user overlay).
+
+    avg_scores: DataFrame with ['Song','Average Score','Rank']
+    user_votes: DataFrame with ['Song','Your Score'] or None
+    """
     if avg_scores.empty:
         return go.Figure()
 
@@ -74,7 +78,10 @@ def make_main_chart(avg_scores: pd.DataFrame, user_votes: pd.DataFrame | None = 
 
 
 def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
-    """Create a main ranking chart showing only the user's scores ordered by the user's ranking."""
+    """Create a ranking chart using only the user's scores, sorted by user's ranking.
+
+    comparison: DataFrame with at least ['Song','Your Score']
+    """
     if comparison is None or comparison.empty:
         return go.Figure()
 
@@ -120,7 +127,7 @@ def make_main_chart_user_only(comparison: pd.DataFrame | None) -> go.Figure:
 
 
 def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
-    """Top-10: no inner bar text; outside-left labels with medal+rank+title+score."""
+    """Top-10 chart: outside-left labels show medal, rank, title, and score."""
     if avg_scores.empty:
         return go.Figure()
 
@@ -187,7 +194,7 @@ def make_top_10_spotlight(avg_scores: pd.DataFrame) -> go.Figure:
 
 
 def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
-    """Show score distribution of averages with highlights."""
+    """Histogram of average scores with a vertical line at the overall mean."""
     if avg_scores.empty:
         return go.Figure()
 
@@ -239,7 +246,7 @@ def make_distribution_chart(avg_scores: pd.DataFrame) -> go.Figure:
 
 
 def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
-    """Show distribution of ALL individual votes (not averages)."""
+    """Histogram of all individual votes (per-song ratings), not averages."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
 
@@ -308,7 +315,7 @@ def make_all_votes_distribution(df_raw: pd.DataFrame | None) -> go.Figure:
 
 
 def make_podium_chart(avg_scores: pd.DataFrame) -> go.Figure:
-    """Podium for ranks 1–3 showing ALL tied songs; smart y-axis zoom with headroom."""
+    """Podium for ranks 1–3; shows all ties, with a smart y-axis band near the top."""
     if avg_scores.empty:
         return go.Figure()
 
@@ -394,7 +401,7 @@ def make_podium_chart(avg_scores: pd.DataFrame) -> go.Figure:
 
 
 def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figure:
-    """Show songs where user differed most from average (top 10 overrated + underrated)."""
+    """Songs where the user differed most from average (top 10 overrated/underrated)."""
     if comparison is None or comparison.empty:
         return go.Figure()
 
@@ -455,7 +462,7 @@ def make_biggest_disagreements_chart(comparison: pd.DataFrame | None) -> go.Figu
 
 
 def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
-    """Side-by-side comparison of user's top 10 vs community's top 10."""
+    """Side-by-side bars: user's top 10 (right) vs community's top 10 (left)."""
     if comparison is None or comparison.empty:
         return go.Figure()
 
@@ -557,7 +564,7 @@ def make_user_vs_community_top10(comparison: pd.DataFrame | None, avg_scores: pd
 
 
 def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> go.Figure:
-    """Heatmap showing all voters' scores for all songs (anonymized except current user)."""
+    """Heatmap of all voter-by-song ratings (anonymized), highlights current user if set."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
 
@@ -616,7 +623,7 @@ def make_voting_heatmap(df_raw: pd.DataFrame | None, email_prefix: str = "") -> 
 
 
 def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
-    """Show standard deviation per song to identify polarizing vs consensus picks."""
+    """Top 10 most polarizing songs via highest per-song standard deviation."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
 
@@ -688,7 +695,7 @@ def make_controversy_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame
 
 
 def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
-    """Show songs with lowest standard deviation (most consensus)."""
+    """Top 10 most agreeable songs via lowest per-song standard deviation."""
     if df_raw is None or df_raw.empty or len(df_raw.columns) < 3:
         return go.Figure()
 
@@ -769,7 +776,7 @@ def make_most_agreeable_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFr
 
 
 def make_user_rating_pattern(comparison: pd.DataFrame | None, df_raw: pd.DataFrame | None) -> go.Figure:
-    """Compare user's score distribution vs community to show if harsh/generous rater."""
+    """Compare user's vote distribution vs community to infer harsh/generous patterns."""
     if comparison is None or comparison.empty or df_raw is None or df_raw.empty:
         return go.Figure()
 
@@ -896,7 +903,7 @@ def make_taste_similarity_chart(similarity_df: pd.DataFrame | None) -> go.Figure
 
 
 def make_2d_taste_map_chart(taste_map_df: pd.DataFrame | None) -> go.Figure:
-    """Create interactive 2D scatter plot of voter taste positions (anonymized)."""
+    """Interactive 2D scatter of voter taste positions (anonymized and highlighted for current user)."""
     if taste_map_df is None or taste_map_df.empty:
         return go.Figure()
 

@@ -8,17 +8,13 @@ from load_data import fetch_data
 from settings import settings
 
 try:
-    from sklearn.cluster import KMeans  # type: ignore
-    from sklearn.manifold import TSNE  # type: ignore
     from sklearn.preprocessing import StandardScaler  # type: ignore
 
     SKLEARN_AVAILABLE = True
 except Exception:
-    # Sklearn not available or caused import error, clustering features will be disabled
+    # Sklearn not available or caused import error; features depending on it will be disabled
     SKLEARN_AVAILABLE = False
-    KMeans = None  # type: ignore
     StandardScaler = None  # type: ignore
-    TSNE = None  # type: ignore
 
 
 # Cache for data loading and processing
@@ -29,7 +25,18 @@ DATA_CACHE = CachedDataLoader(
 
 
 def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.DataFrame]:
-    """Compute average scores for each song."""
+    """Compute per-song average scores with tied ranks.
+
+    Inputs:
+        df: Raw Google Sheet DataFrame where the first 2 columns are metadata
+            (Timestamp, Email address) and remaining columns are song titles with scores.
+
+    Returns:
+        (df_raw, avg_scores) where:
+        - df_raw: the numeric-coerced copy of input (or None if input invalid)
+        - avg_scores: DataFrame with columns [Song, Average Score, Rank]
+          Rank uses competition ranking (ties share the same rank, e.g., 1,1,3,4...)
+    """
     if df is None or df.empty or len(df.columns) < 3:
         return df, pd.DataFrame(columns=["Song", "Average Score"])
 
@@ -173,7 +180,10 @@ def compare_user_votes(email_prefix: str, year: int = 2024) -> tuple[pd.DataFram
         year: Year to load data for (2019, 2023, or 2024)
 
     Returns:
-        tuple[comparison DataFrame, error message or None]
+        (comparison, error):
+        - comparison: DataFrame with ['Song','Average Score','Your Score','Difference']
+          sorted by absolute Difference descending; empty on error/none
+        - error: None on success; user-friendly message otherwise
     """
     try:
         df = _load_year_df(year)
@@ -208,7 +218,7 @@ def _get_data_uncached(user_email_prefix: str = "", year: int = 2024):
         df = _load_year_df(year)
         df_raw, avg_scores = compute_scores(df)
 
-        # If user email provided, get comparison
+        # If user email provided, try to get comparison (but don't fail if user not found)
         comparison = None
         if user_email_prefix:
             comparison, error = compare_user_votes(user_email_prefix, year)
@@ -221,6 +231,7 @@ def _get_data_uncached(user_email_prefix: str = "", year: int = 2024):
 
         return df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, None, comparison
     except Exception as e:
+        # Only critical data loading errors go here
         return None, pd.DataFrame(), 0, 0.0, 0, str(e), None
 
 
@@ -300,7 +311,8 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
         user_email_prefix: Current user's email prefix to highlight
 
     Returns:
-        DataFrame with X, Y coordinates and voter names
+        DataFrame with columns ['Voter', 'X', 'Y', 'Is_Current_User'].
+        When input is invalid or sklearn unavailable, returns an empty DataFrame.
     """
     if df is None or df.empty or len(df.columns) < 3:
         return pd.DataFrame(columns=["Voter", "X", "Y", "Is_Current_User"])
@@ -371,11 +383,7 @@ def cluster_songs(df: pd.DataFrame | None, n_clusters: int = 5) -> tuple[pd.Data
     song_cols = df.columns[2:]
     df_numeric = df[song_cols].apply(pd.to_numeric, errors="coerce")
 
-    # Transpose so each row is a song, each column is a voter
-    song_votes = df_numeric.T
 
-    # Fill NaN with column mean
-    song_votes_filled = song_votes.fillna(song_votes.mean())
 
     # Need at least n_clusters songs
     actual_clusters = min(n_clusters, len(song_votes_filled))
@@ -385,14 +393,7 @@ def cluster_songs(df: pd.DataFrame | None, n_clusters: int = 5) -> tuple[pd.Data
     if not SKLEARN_AVAILABLE:
         return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
 
-    try:
-        # Standardize
-        scaler = StandardScaler()  # type: ignore
-        song_votes_scaled = scaler.fit_transform(np.array(song_votes_filled))  # type: ignore
 
-        # K-means clustering
-        kmeans = KMeans(n_clusters=actual_clusters, random_state=42, n_init=10)  # type: ignore
-        clusters = kmeans.fit_predict(song_votes_scaled)  # type: ignore
 
         # Create result dataframe
         result = pd.DataFrame({"Song": song_cols.tolist(), "Cluster": clusters})

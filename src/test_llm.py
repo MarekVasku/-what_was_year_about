@@ -3,6 +3,8 @@ import sys
 
 import pandas as pd
 
+from llm_implementation import analyze_user_votes
+
 # Add src directory to Python path
 src_path = os.path.join(os.path.dirname(__file__), "src")
 sys.path.append(src_path)

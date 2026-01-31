@@ -149,6 +149,7 @@ def render(event=None):
 - **Highest Rated**: {highest_txt}
 - **Average of Averages**: {avg_all:.2f}
 """
+Deprecated experimental Panel prototype.
 
     table_w.value = q[["Song", "Average Score"]]
     bar_pane.object = make_bar(q if not q.empty else avg.head(0))
@@ -183,5 +184,7 @@ app = pn.Column(
     sizing_mode="stretch_width",
 )
 
-# Expose for `panel serve`
-app.servable()
+if __name__ == "__main__":
+    raise SystemExit(
+        "panel_app_safe.py is deprecated and not used by the Gradio app."
+    )
