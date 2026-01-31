@@ -83,7 +83,6 @@ class TestCreateDashboard:
 
         # This would require importing create_dashboard and calling it
         # Actual test structure depends on refactoring
-        pass
 
     @patch("dashboard.get_data_cached")
     def test_create_dashboard_error_handling(self, mock_get_data):
@@ -99,23 +98,6 @@ class TestCreateDashboard:
         )
 
         # Should handle error gracefully
-        pass
-
-    @patch("dashboard.get_data_cached")
-    def test_create_dashboard_empty_data(self, mock_get_data):
-        """Test dashboard with empty data."""
-        mock_get_data.return_value = (
-            pd.DataFrame(),
-            pd.DataFrame(),
-            0,
-            0.0,
-            0,
-            None,
-            None,
-        )
-
-        # Should return empty figures, not None
-        pass
 
 
 class TestTiedRanking:

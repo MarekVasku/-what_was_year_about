@@ -12,7 +12,6 @@ Environment (optional):
 Safe to run locally: `python src/app_gradio.py`
 """
 
-from pathlib import Path
 
 import gradio as gr
 
@@ -231,6 +230,18 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         all_results = dashboard_data.to_tuple()
         return all_results[5]  # main_plot is the 6th item (index 5)
 
+    def initial_load():
+        """Load initial dashboard with default year and empty email."""
+        return (
+            f"# What Was {DEFAULT_YEAR} About",
+            *create_dashboard("", ranking_view="overlay", year=DEFAULT_YEAR).to_tuple(),
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
+            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
+            gr.update(visible=True),
+            gr.update(visible=True),
+        )
+
     # Wire up refresh with email
     all_outputs = [
         hero_title,  # Add hero_title as first output
@@ -286,15 +297,7 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
 
     # Initial load with empty email and default year
     demo.load(
-        lambda: (
-            f"# What Was {DEFAULT_YEAR} About",
-            *create_dashboard("", ranking_view="overlay", year=DEFAULT_YEAR).to_tuple(),
-            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
-            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
-            "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>",
-            gr.update(visible=True),
-            gr.update(visible=True),
-        ),
+        initial_load,
         inputs=None,
         outputs=all_outputs,
     )

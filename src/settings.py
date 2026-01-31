@@ -39,7 +39,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
-        extra = "ignore"  # Ignore unexpected environment variables
+        extra = "forbid"  # Forbid unexpected environment variables to catch typos
 
     @property
     def llm_enabled(self) -> bool:

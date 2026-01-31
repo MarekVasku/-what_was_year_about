@@ -60,22 +60,5 @@ class TestGoogleSheetsAuthentication:
         assert result == mock_client
 
 
-class TestFetchData:
-    """Test suite for data fetching."""
-
-    @patch("load_data.authenticate")
-    @patch("load_data.pd.DataFrame")
-    def test_fetch_data_2024(self, mock_df, mock_auth):
-        """Test fetching 2024 data (modern format)."""
-        # This requires mocking the gspread client and worksheet
-        # Structure depends on actual implementation
-        pass
-
-    @patch("load_data.authenticate")
-    def test_fetch_data_legacy_year(self, mock_auth):
-        """Test fetching legacy year data (2019/2023)."""
-        pass
-
-
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
