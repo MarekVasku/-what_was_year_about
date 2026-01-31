@@ -50,54 +50,72 @@ def make_prompt(song: str, avg: float) -> str:
     return render_song_blurb_prompt(song_name=song, avg_score=avg)
 
 
+def _extract_song_data(row) -> dict[str, str | float] | None:
+    """Extract song data from a DataFrame row into a dictionary format."""
+    if row is None:
+        return None
+    return {
+        "song": row["Song"],
+        "score": float(row["Your Score"]),
+        "avg_score": float(row["Average Score"]),
+    }
+
+
+def _find_biggest_differences(significant_diffs: pd.DataFrame) -> tuple[dict | None, dict | None]:
+    """Find the biggest positive and negative differences from significant_diffs DataFrame.
+
+    Args:
+        significant_diffs: DataFrame with 'Difference' column
+
+    Returns:
+        Tuple of (biggest_over_data, biggest_under_data) dicts or None
+    """
+    # Find biggest positive difference
+    over_rated = significant_diffs[significant_diffs["Difference"] > 0]
+    biggest_over = over_rated.iloc[0] if not over_rated.empty else None
+
+    # Find biggest negative difference
+    under_rated = significant_diffs[significant_diffs["Difference"] < 0]
+    biggest_under = under_rated.iloc[0] if not under_rated.empty else None
+
+    return _extract_song_data(biggest_over), _extract_song_data(biggest_under)
+
+
+def _is_text_complete(text: str) -> bool:
+    """Check if LLM-generated text ends with proper sentence punctuation."""
+    t = text.strip()
+    return len(t) > 0 and t[-1] in ".!?\u2026"
+
+
 def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
-    """Analyze how a user's votes differ from the average and generate a summary."""
+    """Analyze how a user's votes differ from the average and generate an LLM summary.
+
+    Args:
+        comparison_df: DataFrame with columns ['Song', 'Your Score', 'Average Score', 'Difference']
+
+    Returns:
+        String with LLM-generated voting pattern analysis (250-300 words)
+    """
     if comparison_df.empty:
         return ""
 
-    # Sort by absolute difference to find most significant disagreements
+    # Calculate significant differences
     comparison_df = comparison_df.copy()
     comparison_df["Abs_Diff"] = abs(comparison_df["Difference"])
     significant_diffs = comparison_df.nlargest(3, "Abs_Diff")
 
-    # Find their top rated songs vs overall top rated
+    # Extract top songs
     user_top = comparison_df.nlargest(3, "Your Score")
     overall_top = comparison_df.nlargest(3, "Average Score")
 
-    # Find general voting pattern
-    comparison_df["Difference"].mean()
+    # Calculate voting pattern statistics
     higher_count = (comparison_df["Difference"] > 1).sum()
     lower_count = (comparison_df["Difference"] < -1).sum()
 
-    # Create prompt for LLM using templates
-    # Find biggest positive and negative differences
-    biggest_over = (
-        significant_diffs[significant_diffs["Difference"] > 0].iloc[0]
-        if not significant_diffs[significant_diffs["Difference"] > 0].empty
-        else None
-    )
-    biggest_under = (
-        significant_diffs[significant_diffs["Difference"] < 0].iloc[0]
-        if not significant_diffs[significant_diffs["Difference"] < 0].empty
-        else None
-    )
+    # Extract biggest differences
+    biggest_over_data, biggest_under_data = _find_biggest_differences(significant_diffs)
 
-    biggest_over_data = None
-    if biggest_over is not None:
-        biggest_over_data = {
-            "song": biggest_over["Song"],
-            "score": float(biggest_over["Your Score"]),
-            "avg_score": float(biggest_over["Average Score"]),
-        }
-
-    biggest_under_data = None
-    if biggest_under is not None:
-        biggest_under_data = {
-            "song": biggest_under["Song"],
-            "score": float(biggest_under["Your Score"]),
-            "avg_score": float(biggest_under["Average Score"]),
-        }
-
+    # Format disagreements for prompt
     disagreements = [
         (
             row["Song"],
@@ -108,6 +126,7 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
         for _, row in significant_diffs.iterrows()
     ]
 
+    # Generate LLM prompt
     prompt = render_voting_analysis_prompt(
         biggest_over=biggest_over_data,
         biggest_under=biggest_under_data,
@@ -118,15 +137,11 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
         disagreements=disagreements,
     )
 
-    # Use the long-form analysis model as recommended
-    # Request a longer output and auto-finish if the model cuts mid-sentence
+    # Generate analysis with LLM
     analysis = call_groq(prompt, MODEL_ANALYSIS, temperature=0.5, max_tokens=900)
 
-    def is_complete(text: str) -> bool:
-        t = text.strip()
-        return len(t) > 0 and t[-1] in ".!?\u2026"  # ends with sentence punctuation
-
-    if not is_complete(analysis):
+    # Auto-complete if text ends mid-sentence
+    if not _is_text_complete(analysis):
         tail = call_groq(
             (
                 "Continue and finish the above analysis cleanly in the same tone. "
@@ -138,6 +153,7 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
             max_tokens=240,
         )
         analysis = (analysis.strip() + " " + tail.strip()).strip()
+
     return analysis
 
 

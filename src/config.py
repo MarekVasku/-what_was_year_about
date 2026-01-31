@@ -1,6 +1,16 @@
 """
 Configuration and constants for the music survey visualization app.
-Centralizes hardcoded values to avoid duplication across modules.
+
+This module centralizes all hardcoded values to avoid duplication across the codebase.
+When adding new features, prefer adding constants here rather than hardcoding values
+in individual modules.
+
+Key sections:
+- SPREADSHEET_CONFIG: Google Sheets names for each year
+- UI_CONFIGURATION: Ranking views and display options
+- LLM_MODEL_CONFIGURATION: Model settings for different AI tasks
+- VISUALIZATION_CONSTANTS: Chart dimensions, colors, and fonts
+- DATA_PROCESSING: Score thresholds and column indices
 """
 
 # ============================================================================
