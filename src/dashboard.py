@@ -106,6 +106,11 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
     else:
         winner_display = "—"
 
+    # Add user message if applicable
+    user_not_found_message = ""
+    if user_email_prefix and (comparison is None or comparison.empty):
+        user_not_found_message = " (user not found)"
+
     top3_lines = [
         place_line(top1, "🥇"),
         place_line(top2, "🥈"),
@@ -343,4 +348,3 @@ def show_dashboard(df):
         )
 
         ui.plotly(fig_hist)
-

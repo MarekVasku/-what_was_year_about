@@ -383,17 +383,27 @@ def cluster_songs(df: pd.DataFrame | None, n_clusters: int = 5) -> tuple[pd.Data
     song_cols = df.columns[2:]
     df_numeric = df[song_cols].apply(pd.to_numeric, errors="coerce")
 
-
+    # Fill NaN with column mean
+    song_votes_filled = df_numeric.fillna(df_numeric.mean())
 
     # Need at least n_clusters songs
-    actual_clusters = min(n_clusters, len(song_votes_filled))
+    actual_clusters = min(n_clusters, len(song_votes_filled.columns))
     if actual_clusters < 2:
         return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
 
     if not SKLEARN_AVAILABLE:
         return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
 
+    try:
+        from sklearn.cluster import KMeans  # type: ignore
 
+        # Standardize
+        scaler = StandardScaler()  # type: ignore
+        df_scaled = scaler.fit_transform(np.array(song_votes_filled.T))  # type: ignore
+
+        # K-means clustering
+        kmeans = KMeans(n_clusters=actual_clusters, random_state=42, n_init=10)  # type: ignore
+        clusters = kmeans.fit_predict(df_scaled)  # type: ignore
 
         # Create result dataframe
         result = pd.DataFrame({"Song": song_cols.tolist(), "Cluster": clusters})
@@ -413,15 +423,15 @@ def cluster_songs(df: pd.DataFrame | None, n_clusters: int = 5) -> tuple[pd.Data
 
             # Name based on characteristics
             if avg_score > 7.5:
-                name = "⭐ Crowd Favorites"
+                name = "Crowd Favorites"
             elif avg_score < 5:
-                name = "😐 Underwhelming Picks"
+                name = "Underwhelming Picks"
             elif std_score > 2.5:
-                name = "⚡ Polarizing Tracks"
+                name = "Polarizing Tracks"
             elif std_score < 1.5:
-                name = "🤝 Consensus Picks"
+                name = "Consensus Picks"
             else:
-                name = f"🎵 Group {cluster_id + 1}"
+                name = f"Group {cluster_id + 1}"
 
             cluster_names[cluster_id] = name
 
@@ -461,6 +471,8 @@ def cluster_voters(df: pd.DataFrame | None, n_clusters: int = 4) -> pd.DataFrame
         return pd.DataFrame(columns=["Voter", "Cluster", "Cluster_Name"])
 
     try:
+        from sklearn.cluster import KMeans  # type: ignore
+
         # Standardize
         scaler = StandardScaler()  # type: ignore
         df_scaled = scaler.fit_transform(np.array(df_filled))  # type: ignore

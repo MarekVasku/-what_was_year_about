@@ -12,7 +12,6 @@ Environment (optional):
 Safe to run locally: `python src/app_gradio.py`
 """
 
-from pathlib import Path
 
 import gradio as gr
 

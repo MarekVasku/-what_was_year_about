@@ -149,7 +149,6 @@ def render(event=None):
 - **Highest Rated**: {highest_txt}
 - **Average of Averages**: {avg_all:.2f}
 """
-Deprecated experimental Panel prototype.
 
     table_w.value = q[["Song", "Average Score"]]
     bar_pane.object = make_bar(q if not q.empty else avg.head(0))

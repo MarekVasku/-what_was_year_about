@@ -1,4 +1,4 @@
-"""
+"""NiceGUI dashboard prototype."""
 
 from nicegui import ui
 
@@ -83,12 +83,8 @@ def build_nicegui_dashboard() -> None:
 
     ui.markdown("### All Songs Data Table")
     # Use a simple table representation
-    avg_scores[["Rank", "Song", "Average Score"]].round(2).to_dict("records")
     ui.table.from_pandas(avg_scores[["Rank", "Song", "Average Score"]].round(2))
 
-This module is not used by the main Gradio app and is kept only for reference.
-Running it directly is disabled to avoid confusion.
-"""
 
 if __name__ == "__main__":
     build_nicegui_dashboard()
