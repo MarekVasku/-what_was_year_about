@@ -1,26 +1,27 @@
-"""Core data utilities for loading, computing, and user-specific comparisons.
-
-Contract notes:
-- All functions that accept a DataFrame may also accept None/empty; they will return
-    empty DataFrames or safe defaults rather than raising, so the UI can render gracefully.
-- `get_data_cached` returns a strict tuple used by the UI; its error path returns the same
-    shape with `error` set and other values empty/zeroed.
-"""
-
-from functools import lru_cache
+import math
 
 import numpy as np
 import pandas as pd
 
+from cache import CachedDataLoader
 from load_data import fetch_data
+from settings import settings
 
 try:
     from sklearn.preprocessing import StandardScaler  # type: ignore
+
     SKLEARN_AVAILABLE = True
 except Exception:
     # Sklearn not available or caused import error; features depending on it will be disabled
     SKLEARN_AVAILABLE = False
     StandardScaler = None  # type: ignore
+
+
+# Cache for data loading and processing
+DATA_CACHE = CachedDataLoader(
+    ttl_seconds=settings.cache_ttl_seconds,
+    max_size=settings.cache_max_size,
+)
 
 
 def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.DataFrame]:
@@ -43,28 +44,102 @@ def compute_scores(df: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.Dat
     df = df.copy()
     df[song_cols] = df[song_cols].apply(pd.to_numeric, errors="coerce")
 
-    avg_scores = (
-        df[song_cols].mean()
-        .dropna()
-        .reset_index()
-        .rename(columns={"index": "Song", 0: "Average Score"})
-    )
+    avg_scores = df[song_cols].mean().dropna().reset_index().rename(columns={"index": "Song", 0: "Average Score"})
     avg_scores = avg_scores[avg_scores["Average Score"] > 0].copy()
 
     # --- TIED RANKS (competition rank: 1,1,3,4...) ---
-    avg_scores["Rank"] = (
-        avg_scores["Average Score"]
-        .rank(method="min", ascending=False)
-        .astype(int)
-    )
+    avg_scores["Rank"] = avg_scores["Average Score"].rank(method="min", ascending=False).astype(int)
 
     # Stable ordering for display: by Rank, then score desc, then Song asc
     avg_scores = avg_scores.sort_values(
-        by=["Rank", "Average Score", "Song"],
-        ascending=[True, False, True]
+        by=["Rank", "Average Score", "Song"], ascending=[True, False, True]
     ).reset_index(drop=True)
 
     return df, avg_scores
+
+
+def _standardize_legacy_votes(df: pd.DataFrame | None, year: int) -> pd.DataFrame:
+    """Convert legacy layouts (2019/2023) into 2024-like voter-row matrix.
+
+    Desired output columns:
+      - 'Timestamp' (empty string)
+      - 'Email address' (synthetic: "<voter>@legacy")
+      - then one column per song title. If artist available, title = "<song> - <artist>".
+    """
+    if df is None or df.empty:
+        return pd.DataFrame()
+
+    # Normalize headers to strings
+    df2 = df.copy()
+    df2.columns = [str(c).strip() for c in df2.columns]
+
+    # Helper to find a column by exact lower-case name
+    def find_col(name: str) -> str | None:
+        for c in df2.columns:
+            if c.lower().strip() == name:
+                return c
+        return None
+
+    song_col = find_col("song")
+    artist_col = find_col("artist")
+    if song_col is None:
+        return pd.DataFrame()
+
+    # Build unified title
+    if artist_col is not None:
+        titles = (df2[song_col].astype(str).str.strip() + " - " + df2[artist_col].astype(str).str.strip()).str.strip()
+    else:
+        titles = df2[song_col].astype(str).str.strip()
+
+    # Candidate voter columns (exclude metadata-ish columns)
+    exclude = {song_col}
+    for meta in [artist_col, find_col("order"), find_col("rank"), find_col("average score")]:
+        if meta:
+            exclude.add(meta)
+    candidates = [c for c in df2.columns if c not in exclude]
+
+    def is_vote_column(series: pd.Series) -> bool:
+        vals = pd.to_numeric(series, errors="coerce")
+        total = vals.notna().sum()
+        if total == 0:
+            return False
+        in_range = vals.between(1, 10, inclusive="both").sum()
+        return in_range >= 1 and in_range >= max(1, int(0.1 * total))
+
+    voter_cols = [c for c in candidates if is_vote_column(df2[c])]
+    if not voter_cols:
+        return pd.DataFrame()
+
+    # Build standardized voter-row matrix (row per voter)
+    songs = list(titles)
+    rows: list[dict] = []
+    for voter in voter_cols:
+        vals = pd.to_numeric(df2[voter], errors="coerce")
+        row: dict = {"Timestamp": "", "Email address": f"{voter}@legacy"}
+        for title, v in zip(songs, vals, strict=False):
+            row[title] = float(v) if pd.notna(v) else math.nan
+        rows.append(row)
+
+    std = pd.DataFrame(rows)
+    fixed = ["Timestamp", "Email address"]
+    song_cols = [c for c in std.columns if c not in fixed]
+    return std[fixed + sorted(song_cols)]
+
+
+def _load_year_df(year: int) -> pd.DataFrame:
+    """Return a DataFrame appropriate for computations for the given year.
+
+    - 2024: return raw 2024 sheet as-is.
+    - 2019/2023: load legacy sheet and standardize to 2024-like format.
+    """
+    if year == 2024:
+        return fetch_data(2024)
+    elif year in (2019, 2023):
+        raw = fetch_data(year)
+        std = _standardize_legacy_votes(raw, year)
+        return std if not std.empty else pd.DataFrame()
+    else:
+        raise ValueError("Unsupported year")
 
 
 def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataFrame, str | None]:
@@ -81,7 +156,7 @@ def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataF
         return pd.DataFrame(), "No data available"
 
     # Find row where Email address column matches the prefix
-    user_row = df[df['Email address'].str.lower().str.split('@').str[0] == email_prefix.lower()]
+    user_row = df[df["Email address"].str.lower().str.split("@").str[0] == email_prefix.lower()]
 
     if user_row.empty:
         return pd.DataFrame(), f"No votes found for {email_prefix}"
@@ -97,11 +172,12 @@ def get_user_votes(df: pd.DataFrame | None, email_prefix: str) -> tuple[pd.DataF
     return user_votes, None
 
 
-def compare_user_votes(email_prefix: str) -> tuple[pd.DataFrame, str | None]:
+def compare_user_votes(email_prefix: str, year: int = 2024) -> tuple[pd.DataFrame, str | None]:
     """Compare a user's votes against the average scores.
 
     Args:
-        email_prefix: user's email prefix (before @)
+        email_prefix: User's email prefix (before @)
+        year: Year to load data for (2019, 2023, or 2024)
 
     Returns:
         (comparison, error):
@@ -110,7 +186,7 @@ def compare_user_votes(email_prefix: str) -> tuple[pd.DataFrame, str | None]:
         - error: None on success; user-friendly message otherwise
     """
     try:
-        df = fetch_data()
+        df = _load_year_df(year)
         if df is None:
             return pd.DataFrame(), "No data available"
         df_raw, avg_scores = compute_scores(df)
@@ -122,22 +198,13 @@ def compare_user_votes(email_prefix: str) -> tuple[pd.DataFrame, str | None]:
             return pd.DataFrame(), error
 
         # Merge user votes with average scores
-        comparison = pd.merge(
-            avg_scores,
-            user_votes,
-            on="Song",
-            how="right"
-        )
+        comparison = pd.merge(avg_scores, user_votes, on="Song", how="right")
 
         # Add difference column
         comparison["Difference"] = comparison["Your Score"] - comparison["Average Score"]
 
         # Sort by absolute difference (biggest differences first)
-        comparison = comparison.sort_values(
-            "Difference",
-            key=abs,
-            ascending=False
-        ).reset_index(drop=True)
+        comparison = comparison.sort_values("Difference", key=abs, ascending=False).reset_index(drop=True)
 
         return comparison, None
 
@@ -145,32 +212,18 @@ def compare_user_votes(email_prefix: str) -> tuple[pd.DataFrame, str | None]:
         return pd.DataFrame(), str(e)
 
 
-@lru_cache(maxsize=2)  # Cache both general stats and per-user comparisons
-def get_data_cached(user_email_prefix: str = "") -> tuple[
-    pd.DataFrame | None,  # df_raw
-    pd.DataFrame,         # avg_scores
-    int,                  # total_votes
-    float,                # avg_of_avgs
-    int,                  # total_songs
-    str | None,           # error (only for critical failures; user-not-found is separate)
-    pd.DataFrame | None,  # comparison
-]:
-    """Fetch and cache data with metrics for the UI.
-
-    Error handling:
-    - Critical errors (data fetch/compute failures): returns None/empty for everything with error message
-    - User not found: returns community data successfully, comparison=None (dashboard handles this gracefully)
-    """
+def _get_data_uncached(user_email_prefix: str = "", year: int = 2024):
+    """Fetch data with metrics without caching."""
     try:
-        df = fetch_data()
+        df = _load_year_df(year)
         df_raw, avg_scores = compute_scores(df)
 
         # If user email provided, try to get comparison (but don't fail if user not found)
         comparison = None
         if user_email_prefix:
-            comparison, user_error = compare_user_votes(user_email_prefix)
-            # If user not found, we still want to show community charts
-            # comparison will be None, dashboard will display user-not-found message but show community data
+            comparison, error = compare_user_votes(user_email_prefix, year)
+            if error:
+                return None, pd.DataFrame(), 0, 0.0, 0, error, None
 
         total_votes = len(df_raw) if df_raw is not None else 0
         avg_of_avgs = avg_scores["Average Score"].mean() if not avg_scores.empty else 0.0
@@ -182,27 +235,92 @@ def get_data_cached(user_email_prefix: str = "") -> tuple[
         return None, pd.DataFrame(), 0, 0.0, 0, str(e), None
 
 
+def get_data_cached(user_email_prefix: str = "", year: int = 2024):
+    """Fetch and cache data with metrics.
 
+    Args:
+        user_email_prefix: User's email prefix for personalized data
+        year: Year to load data for (2019, 2023, or 2024)
+    """
+    cache_key = (user_email_prefix.lower() if user_email_prefix else "", year)
+    return DATA_CACHE.get(cache_key, lambda: _get_data_uncached(user_email_prefix, year))
+
+
+def calculate_taste_similarity(df: pd.DataFrame | None, email_prefix: str) -> pd.DataFrame:
+    """Calculate correlation between user's votes and all other voters.
+
+    Args:
+        df: Raw dataframe with votes
+        email_prefix: User's email prefix (before @)
+
+    Returns:
+        DataFrame with voter names and similarity scores (correlation coefficients)
+    """
+    if df is None or df.empty or len(df.columns) < 3:
+        return pd.DataFrame(columns=["Voter", "Similarity Score", "Songs in Common"])
+
+    song_cols = df.columns[2:]
+    df_numeric = df[song_cols].apply(pd.to_numeric, errors="coerce")
+
+    # Find user's row
+    user_mask = df["Email address"].str.lower().str.split("@").str[0] == email_prefix.lower()
+    if not user_mask.any():
+        return pd.DataFrame(columns=["Voter", "Similarity Score", "Songs in Common"])
+
+    user_votes = df_numeric[user_mask].iloc[0]
+
+    similarities = []
+    voter_emails = df["Email address"].tolist()
+    for i, (_idx, row) in enumerate(df_numeric.iterrows()):
+        voter_email = voter_emails[i]
+        voter_name = voter_email.split("@")[0]
+
+        # Skip the user themselves
+        if voter_name.lower() == email_prefix.lower():
+            continue
+
+        # Find songs both voted on
+        common_mask = user_votes.notna() & row.notna()
+        if common_mask.sum() < 3:  # Need at least 3 songs in common
+            continue
+
+        user_common = user_votes[common_mask]
+        voter_common = row[common_mask]
+
+        # Calculate correlation
+        correlation = user_common.corr(voter_common)
+
+        if pd.notna(correlation):
+            similarities.append(
+                {"Voter": voter_name, "Similarity Score": correlation, "Songs in Common": common_mask.sum()}
+            )
+
+    if not similarities:
+        return pd.DataFrame(columns=["Voter", "Similarity Score", "Songs in Common"])
+
+    result = pd.DataFrame(similarities)
+    result = result.sort_values("Similarity Score", ascending=False)
+    return result
 
 
 def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") -> pd.DataFrame:
-    """Create a deterministic 2D projection of voters based on voting patterns.
+    """Create 2D projection of voters based on their voting patterns.
 
     Args:
-        df: raw votes DataFrame (first 2 cols metadata, others numeric scores)
-        user_email_prefix: current user's email prefix to highlight
+        df: Raw dataframe with votes
+        user_email_prefix: Current user's email prefix to highlight
 
     Returns:
         DataFrame with columns ['Voter', 'X', 'Y', 'Is_Current_User'].
         When input is invalid or sklearn unavailable, returns an empty DataFrame.
     """
     if df is None or df.empty or len(df.columns) < 3:
-        return pd.DataFrame(columns=['Voter', 'X', 'Y', 'Is_Current_User'])
+        return pd.DataFrame(columns=["Voter", "X", "Y", "Is_Current_User"])
 
     # Use a stable voter order to ensure deterministic t-SNE across environments
-    df_sorted = df.sort_values('Email address').reset_index(drop=True)
+    df_sorted = df.sort_values("Email address").reset_index(drop=True)
     song_cols = df_sorted.columns[2:]
-    df_numeric = df_sorted[song_cols].apply(pd.to_numeric, errors='coerce')
+    df_numeric = df_sorted[song_cols].apply(pd.to_numeric, errors="coerce")
 
     # Fill NaN with each voter's own mean (row-wise), not a single scalar from the first row
     # This avoids environment-dependent differences from row ordering
@@ -210,10 +328,10 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
 
     # Need at least 2 voters and some valid data
     if len(df_filled) < 2 or df_filled.isna().all().all():
-        return pd.DataFrame(columns=['Voter', 'X', 'Y', 'Is_Current_User'])
+        return pd.DataFrame(columns=["Voter", "X", "Y", "Is_Current_User"])
 
     if not SKLEARN_AVAILABLE:
-        return pd.DataFrame(columns=['Voter', 'X', 'Y', 'Is_Current_User'])
+        return pd.DataFrame(columns=["Voter", "X", "Y", "Is_Current_User"])
 
     try:
         # Standardize the data
@@ -223,32 +341,179 @@ def create_2d_taste_map(df: pd.DataFrame | None, user_email_prefix: str = "") ->
         # Use MDS (Multidimensional Scaling) for deterministic 2D projection
         # MDS preserves distances between points and is fully deterministic
         from sklearn.manifold import MDS  # type: ignore
-        mds = MDS(n_components=2, random_state=42, dissimilarity='euclidean', normalized_stress='auto', n_init=1)  # type: ignore
+
+        mds = MDS(n_components=2, random_state=42, dissimilarity="euclidean", normalized_stress="auto", n_init=1)  # type: ignore
         coords_2d = mds.fit_transform(df_scaled)  # type: ignore
 
         # Canonicalize location/scale so axes are consistent
         coords_2d = (coords_2d - coords_2d.mean(axis=0)) / (coords_2d.std(axis=0) + 1e-9)
 
         # Create result dataframe
-        voter_names = df_sorted['Email address'].str.split('@').str[0].tolist()
-        result = pd.DataFrame({
-            'Voter': voter_names,
-            'X': coords_2d[:, 0],
-            'Y': coords_2d[:, 1],
-            'Is_Current_User': [name.lower() == user_email_prefix.lower() if user_email_prefix else False
-                               for name in voter_names]
-        })
+        voter_names = df_sorted["Email address"].str.split("@").str[0].tolist()
+        result = pd.DataFrame(
+            {
+                "Voter": voter_names,
+                "X": coords_2d[:, 0],
+                "Y": coords_2d[:, 1],
+                "Is_Current_User": [
+                    name.lower() == user_email_prefix.lower() if user_email_prefix else False for name in voter_names
+                ],
+            }
+        )
 
         return result
     except Exception as e:
         print(f"Error in 2D taste map: {e}")
-        return pd.DataFrame(columns=['Voter', 'X', 'Y', 'Is_Current_User'])
+        return pd.DataFrame(columns=["Voter", "X", "Y", "Is_Current_User"])
+
+
+def cluster_songs(df: pd.DataFrame | None, n_clusters: int = 5) -> tuple[pd.DataFrame, dict[int, list[str]]]:
+    """Cluster songs based on voting patterns.
+
+    Args:
+        df: Raw dataframe with votes
+        n_clusters: Number of clusters to create
+
+    Returns:
+        Tuple of (DataFrame with song clusters, dict mapping cluster_id to song names)
+    """
+    if df is None or df.empty or len(df.columns) < 3:
+        return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
+
+    song_cols = df.columns[2:]
+    df_numeric = df[song_cols].apply(pd.to_numeric, errors="coerce")
 
 
 
+    # Need at least n_clusters songs
+    actual_clusters = min(n_clusters, len(song_votes_filled))
+    if actual_clusters < 2:
+        return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
+
+    if not SKLEARN_AVAILABLE:
+        return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
 
 
 
+        # Create result dataframe
+        result = pd.DataFrame({"Song": song_cols.tolist(), "Cluster": clusters})
+
+        # Generate cluster names based on characteristics
+        cluster_dict = {}
+        cluster_names = {}
+
+        for cluster_id in range(actual_clusters):
+            cluster_songs = result[result["Cluster"] == cluster_id]["Song"].tolist()
+            cluster_dict[cluster_id] = cluster_songs
+
+            # Calculate cluster characteristics
+            cluster_votes = song_votes_filled.iloc[[i for i, s in enumerate(song_cols) if s in cluster_songs]]
+            avg_score = cluster_votes.mean().mean()
+            std_score = cluster_votes.std().mean()
+
+            # Name based on characteristics
+            if avg_score > 7.5:
+                name = "⭐ Crowd Favorites"
+            elif avg_score < 5:
+                name = "😐 Underwhelming Picks"
+            elif std_score > 2.5:
+                name = "⚡ Polarizing Tracks"
+            elif std_score < 1.5:
+                name = "🤝 Consensus Picks"
+            else:
+                name = f"🎵 Group {cluster_id + 1}"
+
+            cluster_names[cluster_id] = name
+
+        result["Cluster_Name"] = result["Cluster"].map(cluster_names)
+
+        return result, cluster_dict
+    except Exception as e:
+        print(f"Error in song clustering: {e}")
+        return pd.DataFrame(columns=["Song", "Cluster", "Cluster_Name"]), {}
 
 
+def cluster_voters(df: pd.DataFrame | None, n_clusters: int = 4) -> pd.DataFrame:
+    """Cluster voters into taste groups.
 
+    Args:
+        df: Raw dataframe with votes
+        n_clusters: Number of clusters to create
+
+    Returns:
+        DataFrame with voter names, clusters, and cluster names
+    """
+    if df is None or df.empty or len(df.columns) < 3:
+        return pd.DataFrame(columns=["Voter", "Cluster", "Cluster_Name"])
+
+    song_cols = df.columns[2:]
+    df_numeric = df[song_cols].apply(pd.to_numeric, errors="coerce")
+
+    # Fill NaN with voter's mean
+    df_filled = df_numeric.apply(lambda row: row.fillna(row.mean()), axis=1)
+
+    # Need at least n_clusters voters
+    actual_clusters = min(n_clusters, len(df_filled))
+    if actual_clusters < 2:
+        return pd.DataFrame(columns=["Voter", "Cluster", "Cluster_Name"])
+
+    if not SKLEARN_AVAILABLE:
+        return pd.DataFrame(columns=["Voter", "Cluster", "Cluster_Name"])
+
+    try:
+        # Standardize
+        scaler = StandardScaler()  # type: ignore
+        df_scaled = scaler.fit_transform(np.array(df_filled))  # type: ignore
+
+        # K-means clustering
+        kmeans = KMeans(n_clusters=actual_clusters, random_state=42, n_init=10)  # type: ignore
+        clusters = kmeans.fit_predict(df_scaled)  # type: ignore
+
+        # Create result dataframe
+        voter_names = df["Email address"].str.split("@").str[0].tolist()
+        result = pd.DataFrame({"Voter": voter_names, "Cluster": clusters})
+
+        # Generate cluster names based on voting patterns
+        cluster_names = {}
+        for cluster_id in range(actual_clusters):
+            cluster_mask = clusters == cluster_id
+            cluster_voters = df_filled[cluster_mask]
+
+            if len(cluster_voters) > 0:
+                avg_score = float(np.mean(cluster_voters.to_numpy()))
+                score_range = float(np.max(cluster_voters.to_numpy()) - np.min(cluster_voters.to_numpy()))
+            else:
+                avg_score = 0.0
+                score_range = 0.0
+
+            # Name based on characteristics
+            if avg_score > 8:
+                name = "🌟 The Enthusiasts"
+            elif avg_score < 5:
+                name = "🎭 The Critics"
+            elif score_range > 8:
+                name = "🎲 The Diverse Tastes"
+            elif score_range < 4:
+                name = "😌 The Moderates"
+            else:
+                name = f"👥 Group {cluster_id + 1}"
+
+            cluster_names[cluster_id] = name
+
+        result["Cluster_Name"] = result["Cluster"].map(cluster_names)
+
+        return result
+    except Exception as e:
+        print(f"Error in voter clustering: {e}")
+        return pd.DataFrame(columns=["Voter", "Cluster", "Cluster_Name"])
+
+
+def refresh_data():
+    """Clear cache and reload data.
+
+    We import create_dashboard locally to avoid a circular import at module import time.
+    """
+    DATA_CACHE.clear()
+    from dashboard import create_dashboard
+
+    return create_dashboard()
