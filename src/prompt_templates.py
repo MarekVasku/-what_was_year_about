@@ -4,8 +4,8 @@ Centralizes prompt engineering and makes it maintainable.
 """
 
 from jinja2 import Template
-from config import LLM_ANALYSIS_MIN_WORDS, LLM_ANALYSIS_MAX_WORDS
 
+from config import LLM_ANALYSIS_MAX_WORDS, LLM_ANALYSIS_MIN_WORDS
 
 # ============================================================================
 # USER VOTING ANALYSIS PROMPT
@@ -92,6 +92,7 @@ Keep it light, fun, and under 50 words total.
 # TEMPLATE HELPERS
 # ============================================================================
 
+
 def render_voting_analysis_prompt(
     biggest_over: dict,
     biggest_under: dict,
@@ -105,7 +106,7 @@ def render_voting_analysis_prompt(
 ) -> str:
     """
     Render the voting analysis prompt with data.
-    
+
     Args:
         biggest_over: Dict with 'song', 'score', 'avg_score' for most overrated song
         biggest_under: Dict with 'song', 'score', 'avg_score' for most underrated song
@@ -116,7 +117,7 @@ def render_voting_analysis_prompt(
         disagreements: List of (song, user_score, avg_score, diff) tuples
         min_words: Minimum word count
         max_words: Maximum word count
-        
+
     Returns:
         Rendered prompt string
     """
@@ -127,14 +128,14 @@ def render_voting_analysis_prompt(
             f"{biggest_over['score']:.1f} (while everyone else gave it a modest "
             f"{biggest_over['avg_score']:.1f})"
         )
-    
+
     biggest_under_text = ""
     if biggest_under:
         biggest_under_text = (
             f"and giving '{biggest_under['song']}' a {biggest_under['score']:.1f} "
             f"(compared to the crowd's love at {biggest_under['avg_score']:.1f})"
         )
-    
+
     return VOTING_ANALYSIS_PROMPT.render(
         min_words=min_words,
         max_words=max_words,
@@ -155,11 +156,11 @@ def render_recommendations_prompt(
 ) -> str:
     """
     Render the recommendations prompt.
-    
+
     Args:
         top_songs: List of user's top songs
         bottom_songs: List of user's bottom songs
-        
+
     Returns:
         Rendered prompt string
     """
@@ -176,11 +177,11 @@ def render_song_blurb_prompt(
 ) -> str:
     """
     Render the song blurb prompt.
-    
+
     Args:
         song_name: Name of the top song
         avg_score: Average score for the song
-        
+
     Returns:
         Rendered prompt string
     """

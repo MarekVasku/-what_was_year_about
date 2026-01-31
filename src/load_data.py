@@ -4,6 +4,7 @@ import pandas as pd
 from config import LEGACY_SPREADSHEET_URL, SPREADSHEET_CONFIG, SUPPORTED_YEARS
 from credentials import authenticate
 
+
 def _sanitize_headers(headers: list[str]) -> list[str]:
     """Return a list of unique, non-empty headers.
 
@@ -15,7 +16,7 @@ def _sanitize_headers(headers: list[str]) -> list[str]:
     for i, h in enumerate(headers):
         name = (h or "").strip()
         if not name:
-            name = f"col_{i+1}"
+            name = f"col_{i + 1}"
         base = name
         n = 1
         while name in seen:

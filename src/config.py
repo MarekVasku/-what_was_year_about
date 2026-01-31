@@ -77,8 +77,7 @@ SONG_COLUMNS_START_INDEX = 2  # After Timestamp and Email columns
 # FILE PATHS
 # ============================================================================
 
-import os
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = Path(__file__).resolve().parent

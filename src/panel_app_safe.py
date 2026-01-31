@@ -9,6 +9,7 @@ from load_data import fetch_data
 
 pn.extension("plotly")
 
+
 # ---------- data prep ----------
 def compute_scores(df: pd.DataFrame):
     """Return (raw_df, avg_scores) where avg_scores has columns [Song, Average Score]."""
@@ -19,17 +20,12 @@ def compute_scores(df: pd.DataFrame):
     df = df.copy()
     df[song_cols] = df[song_cols].apply(pd.to_numeric, errors="coerce")
 
-    avg_scores = (
-        df[song_cols]
-        .mean()
-        .dropna()
-        .reset_index()
-        .rename(columns={"index": "Song", 0: "Average Score"})
-    )
+    avg_scores = df[song_cols].mean().dropna().reset_index().rename(columns={"index": "Song", 0: "Average Score"})
     # remove zeros and sort ascending so bars grow upward
     avg_scores = avg_scores[avg_scores["Average Score"] > 0].copy()
     avg_scores = avg_scores.sort_values("Average Score", ascending=True).reset_index(drop=True)
     return df, avg_scores
+
 
 @lru_cache(maxsize=1)
 def get_data_cached():
@@ -44,9 +40,11 @@ def get_data_cached():
         avg_of_avgs = float("nan")
     return raw, avg, total_votes, highest, avg_of_avgs
 
+
 def refresh_data(event=None):
     get_data_cached.cache_clear()
     render()  # re-draw with fresh data
+
 
 # ---------- plotting ----------
 def make_bar(df_plot: pd.DataFrame):
@@ -73,6 +71,7 @@ def make_bar(df_plot: pd.DataFrame):
     )
     return fig
 
+
 def make_hist(avg_scores: pd.DataFrame):
     fig = px.histogram(
         avg_scores,
@@ -90,17 +89,19 @@ def make_hist(avg_scores: pd.DataFrame):
     )
     return fig
 
+
 # ---------- widgets ----------
 min_rating = pn.widgets.FloatSlider(name="Minimum Rating", start=0.0, end=10.0, step=0.1, value=0.0)
-topn       = pn.widgets.IntSlider(name="Top N", start=1, end=200, step=1, value=20)
-search     = pn.widgets.TextInput(name="Search song", placeholder="type to filter…")
-refresh    = pn.widgets.Button(name="🔄 Refresh from Google Sheet", button_type="primary")
+topn = pn.widgets.IntSlider(name="Top N", start=1, end=200, step=1, value=20)
+search = pn.widgets.TextInput(name="Search song", placeholder="type to filter…")
+refresh = pn.widgets.Button(name="🔄 Refresh from Google Sheet", button_type="primary")
 
 # ---------- panes / outputs ----------
 metrics_md = pn.pane.Markdown("### 📊 Key Metrics\n_Loading…_")
-table_w    = pn.widgets.DataFrame(disabled=True, sizing_mode="stretch_width", height=360)
-bar_pane   = pn.pane.Plotly(sizing_mode="stretch_width")
-hist_pane  = pn.pane.Plotly(sizing_mode="stretch_width")
+table_w = pn.widgets.DataFrame(disabled=True, sizing_mode="stretch_width", height=360)
+bar_pane = pn.pane.Plotly(sizing_mode="stretch_width")
+hist_pane = pn.pane.Plotly(sizing_mode="stretch_width")
+
 
 def render(event=None):
     """Read cached data, set widget bounds, recompute filters, and update panes."""
@@ -109,18 +110,18 @@ def render(event=None):
     # set sensible widget bounds based on data
     if not avg.empty:
         min_rating.start = float(avg["Average Score"].min())
-        min_rating.end   = float(min(10.0, avg["Average Score"].max()))
-        topn.end         = int(len(avg))
+        min_rating.end = float(min(10.0, avg["Average Score"].max()))
+        topn.end = int(len(avg))
         if min_rating.value < min_rating.start:
             min_rating.value = min_rating.start
         if topn.value > topn.end:
             topn.value = min(20, topn.end)
     else:
         min_rating.start = 0.0
-        min_rating.end   = 10.0
+        min_rating.end = 10.0
         min_rating.value = 0.0
-        topn.end         = 1
-        topn.value       = 1
+        topn.end = 1
+        topn.value = 1
 
     # filter
     q = avg.copy()
@@ -152,6 +153,7 @@ def render(event=None):
     table_w.value = q[["Song", "Average Score"]]
     bar_pane.object = make_bar(q if not q.empty else avg.head(0))
     hist_pane.object = make_hist(avg)
+
 
 # react to user input
 for w in (min_rating, topn, search):

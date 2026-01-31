@@ -21,6 +21,7 @@ MODEL_JSON = settings.model_json
 # Legacy single-model env for backward compatibility
 GROQ_MODEL = settings.groq_model or MODEL_BLURB
 
+
 def fetch_df() -> pd.DataFrame:
     """Fetch Google Sheet into a DataFrame.
 
@@ -31,6 +32,7 @@ def fetch_df() -> pd.DataFrame:
     gc = authenticate()
     sh = gc.open(SPREADSHEET_CONFIG[DEFAULT_YEAR]).sheet1
     return pd.DataFrame(sh.get_all_records())
+
 
 def get_top_song(df: pd.DataFrame, meta_cols: int = 2) -> tuple[str, float]:
     # assumes first 2 columns are metadata (Timestamp, Email); ratings follow
@@ -43,8 +45,10 @@ def get_top_song(df: pd.DataFrame, meta_cols: int = 2) -> tuple[str, float]:
     top_score = float(means.max())
     return top_song, top_score
 
+
 def make_prompt(song: str, avg: float) -> str:
     return render_song_blurb_prompt(song_name=song, avg_score=avg)
+
 
 def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
     """Analyze how a user's votes differ from the average and generate a summary."""
@@ -53,28 +57,28 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
 
     # Sort by absolute difference to find most significant disagreements
     comparison_df = comparison_df.copy()
-    comparison_df['Abs_Diff'] = abs(comparison_df['Difference'])
-    significant_diffs = comparison_df.nlargest(3, 'Abs_Diff')
+    comparison_df["Abs_Diff"] = abs(comparison_df["Difference"])
+    significant_diffs = comparison_df.nlargest(3, "Abs_Diff")
 
     # Find their top rated songs vs overall top rated
-    user_top = comparison_df.nlargest(3, 'Your Score')
-    overall_top = comparison_df.nlargest(3, 'Average Score')
+    user_top = comparison_df.nlargest(3, "Your Score")
+    overall_top = comparison_df.nlargest(3, "Average Score")
 
     # Find general voting pattern
-    avg_difference = comparison_df['Difference'].mean()
-    higher_count = (comparison_df['Difference'] > 1).sum()
-    lower_count = (comparison_df['Difference'] < -1).sum()
+    comparison_df["Difference"].mean()
+    higher_count = (comparison_df["Difference"] > 1).sum()
+    lower_count = (comparison_df["Difference"] < -1).sum()
 
     # Create prompt for LLM using templates
     # Find biggest positive and negative differences
     biggest_over = (
-        significant_diffs[significant_diffs['Difference'] > 0].iloc[0]
-        if not significant_diffs[significant_diffs['Difference'] > 0].empty
+        significant_diffs[significant_diffs["Difference"] > 0].iloc[0]
+        if not significant_diffs[significant_diffs["Difference"] > 0].empty
         else None
     )
     biggest_under = (
-        significant_diffs[significant_diffs['Difference'] < 0].iloc[0]
-        if not significant_diffs[significant_diffs['Difference'] < 0].empty
+        significant_diffs[significant_diffs["Difference"] < 0].iloc[0]
+        if not significant_diffs[significant_diffs["Difference"] < 0].empty
         else None
     )
 
@@ -136,8 +140,8 @@ def analyze_user_votes(comparison_df: pd.DataFrame) -> str:
         analysis = (analysis.strip() + " " + tail.strip()).strip()
     return analysis
 
+
 def call_groq(
-        
     prompt: str,
     model: str | None = None,
     *,
@@ -150,6 +154,7 @@ def call_groq(
             # string so callers can decide how to render the absence of content.
             return ""
         from groq import Groq
+
         client = Groq(api_key=GROQ_API_KEY)
         # Select model with sensible defaults based on env or provided override
         _model = model or GROQ_MODEL
@@ -159,12 +164,13 @@ def call_groq(
             temperature=0.7 if temperature is None else float(temperature),
             max_tokens=500 if max_tokens is None else int(max_tokens),
             top_p=1,
-            stop=None
+            stop=None,
         )
         content = resp.choices[0].message.content
         return content.strip() if content else "No response generated"
     except Exception as e:
         return f"Error generating response: {str(e)}"
+
 
 def get_user_voting_insight(comparison_df: pd.DataFrame) -> str:
     """Get an LLM-generated insight about how this user's votes compare to the group."""
@@ -180,12 +186,12 @@ def get_user_voting_insight(comparison_df: pd.DataFrame) -> str:
 
 def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) -> list[dict[str, str]]:
     """Generate artist/genre recommendations based on user's top 5 and bottom 5 songs.
-    
+
     Args:
         top5: List of user's top 5 rated songs
-        bottom5: List of user's bottom 5 rated songs  
+        bottom5: List of user's bottom 5 rated songs
         n: Number of recommendations to generate (default 5)
-        
+
     Returns:
         List of dicts with keys: 'song' (used for artist/genre), 'artist' (empty), 'reason'
         Returns empty list on error
@@ -196,8 +202,8 @@ def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) ->
     # Sanitize song names to prevent JSON parsing issues with escape sequences
     def sanitize_song(song: str) -> str:
         """Remove problematic characters from song names."""
-        return song.replace('\\', '/').replace('\n', ' ').replace('\r', ' ').strip()
-    
+        return song.replace("\\", "/").replace("\n", " ").replace("\r", " ").strip()
+
     top5_clean = [sanitize_song(s) for s in top5]
     bottom5_clean = [sanitize_song(s) for s in bottom5]
 
@@ -214,7 +220,7 @@ def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) ->
 
         # Extract JSON array if wrapped in markdown or other text
         # Try to find balanced brackets to handle complex content
-        json_match = re.search(r'\[\s*\{.*\}\s*\]', response, re.DOTALL)
+        json_match = re.search(r"\[\s*\{.*\}\s*\]", response, re.DOTALL)
         if json_match:
             json_str = json_match.group(0)
             try:
@@ -222,51 +228,53 @@ def generate_recommendations(top5: list[str], bottom5: list[str], n: int = 5) ->
             except json.JSONDecodeError:
                 # Try with re.escape to handle backslashes in content
                 # Find first [ and last ] and extract everything between
-                start_idx = response.find('[')
-                end_idx = response.rfind(']')
+                start_idx = response.find("[")
+                end_idx = response.rfind("]")
                 if start_idx >= 0 and end_idx > start_idx:
-                    json_str = response[start_idx:end_idx + 1]
+                    json_str = response[start_idx : end_idx + 1]
                     try:
                         recommendations = json.loads(json_str)
                     except json.JSONDecodeError as e:
                         # If still failing, return empty with helpful error
-                        return [{
-                            'song': 'Unable to parse recommendations',
-                            'artist': '',
-                            'reason': f'JSON parsing error: {str(e)[:100]}'
-                        }]
+                        return [
+                            {
+                                "song": "Unable to parse recommendations",
+                                "artist": "",
+                                "reason": f"JSON parsing error: {str(e)[:100]}",
+                            }
+                        ]
                 else:
-                    return [{
-                        'song': 'Unable to analyze taste',
-                        'artist': '',
-                        'reason': 'Could not find JSON in AI response.'
-                    }]
+                    return [
+                        {
+                            "song": "Unable to analyze taste",
+                            "artist": "",
+                            "reason": "Could not find JSON in AI response.",
+                        }
+                    ]
 
             # Validate structure
             if isinstance(recommendations, list):
                 valid_recs = []
                 for rec in recommendations[:n]:  # Limit to n recommendations
-                    if isinstance(rec, dict) and all(k in rec for k in ['song', 'artist', 'reason']):
-                        valid_recs.append({
-                            'song': str(rec['song']),
-                            'artist': str(rec['artist']),
-                            'reason': str(rec['reason'])
-                        })
+                    if isinstance(rec, dict) and all(k in rec for k in ["song", "artist", "reason"]):
+                        valid_recs.append(
+                            {"song": str(rec["song"]), "artist": str(rec["artist"]), "reason": str(rec["reason"])}
+                        )
                 return valid_recs
 
         # Fallback if JSON parsing fails
-        return [{
-            'song': 'Unable to analyze taste',
-            'artist': '',
-            'reason': 'Could not parse AI response. Please try refreshing.'
-        }]
+        return [
+            {
+                "song": "Unable to analyze taste",
+                "artist": "",
+                "reason": "Could not parse AI response. Please try refreshing.",
+            }
+        ]
 
     except Exception as e:
-        return [{
-            'song': 'Error generating recommendations',
-            'artist': '',
-            'reason': f'An error occurred: {str(e)[:100]}'
-        }]
+        return [
+            {"song": "Error generating recommendations", "artist": "", "reason": f"An error occurred: {str(e)[:100]}"}
+        ]
 
 
 if __name__ == "__main__":

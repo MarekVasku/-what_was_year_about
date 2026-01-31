@@ -1,5 +1,5 @@
 import gradio as gr
-from dashboard import create_dashboard
+
 from config import (
     DEFAULT_YEAR,
     HEADER_IMAGE,
@@ -7,13 +7,13 @@ from config import (
     RANKING_VIEW_MAPPING,
     SUPPORTED_YEARS,
 )
+from dashboard import create_dashboard
 from feedback import FeedbackSubmitter
 from settings import settings
 from theme import CUSTOM_CSS, THEME
 
 # ---------- Gradio UI (UI-only, imports functionality from modules) ----------
 with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=CUSTOM_CSS) as demo:
-
     # Hero section with optional image
     with gr.Column(elem_classes=["hero"]):
         gr.Image(value=str(HEADER_IMAGE), show_label=False, height=300)
@@ -22,20 +22,23 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         hero_subtitle = gr.Markdown("_Results of your's favourite yearly music chart_")
 
         # Spotify Playlist Embed (centered) - only for 2024
-        spotify_embed = gr.HTML("""
+        spotify_embed = gr.HTML(
+            """
             <div style="display: flex; justify-content: center; margin: 1rem 0;">
-                <iframe data-testid="embed-iframe" 
-                        style="border-radius:12px;" 
-                        src="https://open.spotify.com/embed/playlist/3f8Wce2yeoEpOIGufXDYwD?utm_source=generator&theme=0" 
-                        width="100%" 
-                        height="352" 
-                        frameBorder="0" 
-                        allowfullscreen="" 
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                <iframe data-testid="embed-iframe"
+                        style="border-radius:12px;"
+                        src="https://open.spotify.com/embed/playlist/3f8Wce2yeoEpOIGufXDYwD?utm_source=generator&theme=0"
+                        width="100%"
+                        height="352"
+                        frameBorder="0"
+                        allowfullscreen=""
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                         loading="lazy">
                 </iframe>
             </div>
-        """, visible=True)
+        """,
+            visible=True,
+        )
         spotify_note = gr.Markdown(
             (
                 "Note: Some songs (BABYS IN A THUNDERCLOUD by Godspeed You! Black Emperor, Veneficium by Xiu Xiu) were removed from "
@@ -43,7 +46,7 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
                 "Also F*ck ICE just for the sake."
             ),
             elem_classes=["model-note"],
-            visible=True
+            visible=True,
         )
         gr.Markdown(
             "<p style='font-size: 0.95rem; color: #ffffff !important; text-align: center; margin: 0.5rem 0 0.25rem;'>"
@@ -52,17 +55,10 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         )
         with gr.Row():
             year_selector = gr.Dropdown(
-                label="Select Year",
-                choices=SUPPORTED_YEARS,
-                value=DEFAULT_YEAR,
-                show_label=True,
-                scale=1
+                label="Select Year", choices=SUPPORTED_YEARS, value=DEFAULT_YEAR, show_label=True, scale=1
             )
             email_input = gr.Textbox(
-                label="Your email prefix",
-                placeholder="e.g., macdemarco (without @gmail.com)",
-                show_label=True,
-                scale=2
+                label="Your email prefix", placeholder="e.g., macdemarco (without @gmail.com)", show_label=True, scale=2
             )
             refresh_btn = gr.Button("Refresh Data 🔄", variant="primary", scale=1)
 
@@ -72,17 +68,23 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
 
     # Podium visualization
     gr.Markdown("## The Podium")
-    gr.Markdown("_The champions. Song winners of last years. The chosen ones. The songs that made you fill '10' without hesitation (or maybe they tied at 7.29, who knows)._")
+    gr.Markdown(
+        "_The champions. Song winners of last years. The chosen ones. The songs that made you fill '10' without hesitation (or maybe they tied at 7.29, who knows)._"
+    )
     podium_plot = gr.Plot()
 
     # Top 10 spotlight
     gr.Markdown("## Top 10 Spotlight")
-    gr.Markdown("_Because everyone loves a top 10 list. No matter how many songs were in the final playlist, everyone loves top 10s._")
+    gr.Markdown(
+        "_Because everyone loves a top 10 list. No matter how many songs were in the final playlist, everyone loves top 10s._"
+    )
     top10_plot = gr.Plot()
 
     # Distribution charts side by side
     gr.Markdown("## Score Distributions")
-    gr.Markdown("_Ever wondered if everyone's just vibing around 7s or if there are actual opinions happening? And what about your voting patterns? These histograms know._")
+    gr.Markdown(
+        "_Ever wondered if everyone's just vibing around 7s or if there are actual opinions happening? And what about your voting patterns? These histograms know._"
+    )
     with gr.Row():
         with gr.Column(scale=1):
             avg_dist_plot = gr.Plot()
@@ -91,7 +93,9 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
 
     # Full rankings
     gr.Markdown("## Complete Rankings")
-    gr.Markdown("_All the songs. Every single one. Ranked from 'meh' to 'oh my, life changing song I am hearing'. Switch views to see where you agree or disagree._")
+    gr.Markdown(
+        "_All the songs. Every single one. Ranked from 'meh' to 'oh my, life changing song I am hearing'. Switch views to see where you agree or disagree._"
+    )
     with gr.Row():
         ranking_view = gr.Radio(
             label="View",
@@ -104,23 +108,21 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### Overall Rankings")
-            all_songs_table = gr.Dataframe(
-                headers=["Rank", "Song", "Average Score"],
-                interactive=False,
-                wrap=True
-            )
+            all_songs_table = gr.Dataframe(headers=["Rank", "Song", "Average Score"], interactive=False, wrap=True)
         with gr.Column(scale=1):
             gr.Markdown("### Your Votes vs Average")
             user_comparison = gr.Dataframe(
-                headers=["Rank", "Song", "Average Score", "Your Score", "Difference"],
-                interactive=False,
-                wrap=True
+                headers=["Rank", "Song", "Average Score", "Your Score", "Difference"], interactive=False, wrap=True
             )
 
     # New user-specific visualizations (only shown when user email is provided)
     gr.Markdown("## Your Personal Music Analysis")
-    warning_personal = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600; margin-bottom: 10px;'>⚠️ To see your personalized insights, enter your email address above.</p>")
-    gr.Markdown("This is where your music taste is analyzed (if you filled this year's survey). Enter your email above to unlock personalized insight.")
+    warning_personal = gr.Markdown(
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600; margin-bottom: 10px;'>⚠️ To see your personalized insights, enter your email address above.</p>"
+    )
+    gr.Markdown(
+        "This is where your music taste is analyzed (if you filled this year's survey). Enter your email above to unlock personalized insight."
+    )
 
     with gr.Row():
         with gr.Column(scale=1):
@@ -133,12 +135,18 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
             user_vs_top10_plot = gr.Plot()
 
     gr.Markdown("### Your Rating Pattern")
-    warning_rating = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>")
-    gr.Markdown("_Are you a harsh critic handing out 3s like candy, or a generous soul showering 9s? This chart exposes your rating philosophy_")
+    warning_rating = gr.Markdown(
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
+    )
+    gr.Markdown(
+        "_Are you a harsh critic handing out 3s like candy, or a generous soul showering 9s? This chart exposes your rating philosophy_"
+    )
     rating_pattern_plot = gr.Plot()
 
     gr.Markdown("## Community Insights")
-    gr.Markdown("_Dive into the collective consciousness. See patterns, chaos, and who's secretly rating everything a 5._")
+    gr.Markdown(
+        "_Dive into the collective consciousness. See patterns, chaos, and who's secretly rating everything a 5._"
+    )
 
     gr.Markdown("### All Votes Heatmap")
     gr.Markdown("_Voters are anonymized except you_")
@@ -161,12 +169,18 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
     )
 
     gr.Markdown("### 2D Taste Map")
-    gr.Markdown("_Explore music taste similarities (anonymized). Currently far from being useful, will come handy with more voters (please vote next years!)._")
+    gr.Markdown(
+        "_Explore music taste similarities (anonymized). Currently far from being useful, will come handy with more voters (please vote next years!)._"
+    )
     taste_map_plot = gr.Plot()
 
     gr.Markdown("## Your Music Taste Recommendations")
-    warning_recommendations = gr.Markdown("<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>")
-    gr.Markdown("_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._")
+    warning_recommendations = gr.Markdown(
+        "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>"
+    )
+    gr.Markdown(
+        "_Generative AI (LLM) analyzes your favorites and suggests artists/genres to explore in 2025 - sometimes maybe good, sometimes maybe shit hallucination._"
+    )
     recommendations_box = gr.Markdown("")
 
     def refresh_with_email(year, email_prefix, ranking_view_choice):
@@ -177,13 +191,17 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
 
         # Hide warnings if email is provided and has data
         has_data = email_prefix and email_prefix.strip() != ""
-        warning_text = "" if has_data else "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
+        warning_text = (
+            ""
+            if has_data
+            else "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above</p>"
+        )
 
         # Update hero title based on year
         title = f"# What Was {year} About"
-        
+
         # Show Spotify embed only for 2024
-        show_spotify = (year == 2024)
+        show_spotify = year == 2024
 
         # Use gr.update to toggle visibility for HTML/Markdown components
         spotify_embed_update = gr.update(visible=show_spotify)
@@ -201,9 +219,19 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
     # Wire up refresh with email
     all_outputs = [
         hero_title,  # Add hero_title as first output
-        overview, podium_plot, top10_plot, avg_dist_plot, all_votes_plot, main_plot,
-        all_songs_table, user_comparison,
-        disagreements_plot, user_vs_top10_plot, heatmap_plot, controversy_plot, agreeable_plot,
+        overview,
+        podium_plot,
+        top10_plot,
+        avg_dist_plot,
+        all_votes_plot,
+        main_plot,
+        all_songs_table,
+        user_comparison,
+        disagreements_plot,
+        user_vs_top10_plot,
+        heatmap_plot,
+        controversy_plot,
+        agreeable_plot,
         rating_pattern_plot,
         taste_map_plot,
         recommendations_box,
@@ -211,7 +239,7 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         warning_rating,
         warning_recommendations,
         spotify_embed,  # Add spotify visibility control
-        spotify_note,    # Add spotify note visibility control
+        spotify_note,  # Add spotify note visibility control
     ]
 
     refresh_btn.click(
@@ -318,5 +346,4 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
 
 
 if __name__ == "__main__":
-
     demo.launch(share=False)  # Set share=True for public link

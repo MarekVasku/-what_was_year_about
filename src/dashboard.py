@@ -1,4 +1,6 @@
 import pandas as pd
+import plotly.express as px  # noqa: F401
+from nicegui import ui  # noqa: F401
 
 from data_utils import create_2d_taste_map, get_data_cached
 from llm_implementation import (
@@ -33,7 +35,9 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
         ranking_view: one of "overlay" (avg + your scores), "user" (only your scores), or "average" (only group average)
         year: Year to display data for (2019, 2023, or 2024)
     """
-    df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, error, comparison = get_data_cached(user_email_prefix, year)
+    df_raw, avg_scores, total_votes, avg_of_avgs, total_songs, error, comparison = get_data_cached(
+        user_email_prefix, year
+    )
 
     empty_fig = make_podium_chart(pd.DataFrame())
     if error:
@@ -85,17 +89,14 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
         )
 
     # --- Overview respecting ties and listing all tied songs ---
-    top1 = avg_scores[avg_scores['Rank'] == 1]
-    top2 = avg_scores[avg_scores['Rank'] == 2]
-    top3 = avg_scores[avg_scores['Rank'] == 3]
+    top1 = avg_scores[avg_scores["Rank"] == 1]
+    top2 = avg_scores[avg_scores["Rank"] == 2]
+    top3 = avg_scores[avg_scores["Rank"] == 3]
 
     def place_line(place_df, medal):
         if place_df.empty:
             return f"{medal} —"
-        items = [
-            f"{row['Song']} ({row['Average Score']:.2f})"
-            for _, row in place_df.iterrows()
-        ]
+        items = [f"{row['Song']} ({row['Average Score']:.2f})" for _, row in place_df.iterrows()]
         return f"{medal} " + " • ".join(items)
 
     # Winner display (all rank-1 songs listed)
@@ -111,7 +112,6 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
         place_line(top3, "🥉"),
     ]
 
-
     overview = f"""### Winner
 {winner_display}
 
@@ -119,8 +119,8 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
 
 ### Top 3
 
-{top3_lines[0]}  
-{top3_lines[1]}  
+{top3_lines[0]}
+{top3_lines[1]}
 {top3_lines[2]}
 """
 
@@ -139,8 +139,8 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
     all_votes_chart = make_all_votes_distribution(df_raw)
 
     # All songs table (rounded to 2 decimals, exclude songs with no votes)
-    all_songs_table = avg_scores[avg_scores['Average Score'] > 0][['Rank', 'Song', 'Average Score']].copy()
-    all_songs_table['Average Score'] = all_songs_table['Average Score'].round(2)
+    all_songs_table = avg_scores[avg_scores["Average Score"] > 0][["Rank", "Song", "Average Score"]].copy()
+    all_songs_table["Average Score"] = all_songs_table["Average Score"].round(2)
 
     # User-specific visualizations
     disagreements_chart = make_podium_chart(pd.DataFrame())  # empty default
@@ -154,7 +154,6 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
     taste_map_chart = make_2d_taste_map_chart(create_2d_taste_map(df_raw, user_email_prefix))
 
     # User comparison section and LLM insight
-    user_comparison = comparison
     recommendations_display = ""
 
     if comparison is not None and not comparison.empty:
@@ -176,9 +175,9 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         # Generate artist/genre recommendations based on taste
         try:
             # Get top 5 and bottom 5 songs based on user's ratings
-            sorted_comparison = comparison.sort_values(by='Your Score', ascending=False)
-            top5_songs = sorted_comparison.head(5)['Song'].tolist()
-            bottom5_songs = sorted_comparison.tail(5)['Song'].tolist()
+            sorted_comparison = comparison.sort_values(by="Your Score", ascending=False)
+            top5_songs = sorted_comparison.head(5)["Song"].tolist()
+            bottom5_songs = sorted_comparison.tail(5)["Song"].tolist()
 
             recommendations = generate_recommendations(top5_songs, bottom5_songs, n=5)
 
@@ -186,8 +185,8 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
             if recommendations and len(recommendations) > 0:
                 rec_lines = []
                 for i, rec in enumerate(recommendations, 1):
-                    artist_or_genre = rec.get('song', 'Unknown')  # 'song' field contains artist/genre
-                    reason = rec.get('reason', 'No reason provided')
+                    artist_or_genre = rec.get("song", "Unknown")  # 'song' field contains artist/genre
+                    reason = rec.get("reason", "No reason provided")
                     rec_lines.append(f"**{i}. {artist_or_genre}**\n   _{reason}_")
 
                 recommendations_display = "\n\n".join(rec_lines)
@@ -220,8 +219,7 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         taste_map_plot=taste_map_chart,
         recommendations_display=recommendations_display,
     )
-import plotly.express as px
-from nicegui import ui
+
 
 # Playing around and experimenting with the NiceGUI framework
 
@@ -231,7 +229,7 @@ def show_dashboard(df):
     song_columns = df.columns[2:]
 
     # Convert song rating columns to numeric
-    df[song_columns] = df[song_columns].apply(pd.to_numeric, errors='coerce')
+    df[song_columns] = df[song_columns].apply(pd.to_numeric, errors="coerce")
 
     # Compute mean scores, dropping NaNs
     avg_scores = df[song_columns].mean().dropna().reset_index()
@@ -252,7 +250,9 @@ def show_dashboard(df):
     with ui.row().classes("w-full bg-gray-100 p-5 shadow-sm"):
         with ui.column():
             ui.label(f"Total Votes: {df.shape[0]}").classes("text-2xl font-semibold")
-            ui.label(f"Highest Rated: {sorted_data.iloc[-1]['Song']} ({sorted_data.iloc[-1]['Average Score']:.2f})").classes("text-lg text-gray-600")
+            ui.label(
+                f"Highest Rated: {sorted_data.iloc[-1]['Song']} ({sorted_data.iloc[-1]['Average Score']:.2f})"
+            ).classes("text-lg text-gray-600")
             ui.label(f"Average Rating: {sorted_data['Average Score'].mean():.2f}").classes("text-lg text-gray-600")
 
     # **Dynamic Charts Section**
@@ -260,9 +260,9 @@ def show_dashboard(df):
         chart_area = ui.column().classes("w-2/3 bg-white p-4 shadow rounded-lg")
 
     def update_chart():
-        filtered_data = sorted_data[
-            sorted_data["Average Score"] >= rating_threshold.value
-        ].sort_values(by="Average Score", ascending=True)
+        filtered_data = sorted_data[sorted_data["Average Score"] >= rating_threshold.value].sort_values(
+            by="Average Score", ascending=True
+        )
 
         fig = px.bar(
             filtered_data,
@@ -304,11 +304,10 @@ def show_dashboard(df):
     # **Search Bar**
     with ui.row().classes("w-full p-4 bg-gray-100"):
         search_input = ui.input("Search for a song").classes("w-1/3 p-2 border rounded")
+
         def search_song():
             search_term = search_input.value.lower()
-            filtered_data = sorted_data[
-                sorted_data["Song"].str.lower().str.contains(search_term, na=False)
-            ]
+            filtered_data = sorted_data[sorted_data["Song"].str.lower().str.contains(search_term, na=False)]
             if filtered_data.empty:
                 ui.notify("No matching songs found!")
             else:
@@ -317,7 +316,7 @@ def show_dashboard(df):
         ui.button("Search", on_click=search_song).classes("bg-blue-500 text-white p-2 rounded")
 
     # **Chart Display**
-    empty_data = pd.DataFrame({'Song': [], 'Average Score': []})  # Empty DataFrame
+    empty_data = pd.DataFrame({"Song": [], "Average Score": []})  # Empty DataFrame
     fig = px.bar(empty_data, x="Average Score", y="Song")  # Initialize empty figure
     plot = ui.plotly(fig)
     update_chart()
