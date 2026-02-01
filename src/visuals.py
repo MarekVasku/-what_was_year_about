@@ -1079,3 +1079,506 @@ def make_voter_clustering_chart(voter_clusters_df: pd.DataFrame | None) -> go.Fi
     fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.06)", gridwidth=1, zeroline=False)
 
     return fig
+
+
+# ============================================================================
+# STATE-OF-THE-ART 2026 VISUALIZATIONS
+# ============================================================================
+
+
+def make_sunburst_chart(avg_scores: pd.DataFrame) -> go.Figure:
+    """Create a sunburst chart showing song hierarchy by score ranges.
+
+    This modern hierarchical visualization uses concentric rings to show
+    score distribution patterns in an intuitive, space-efficient way.
+    """
+    if avg_scores.empty:
+        return go.Figure()
+
+    # Create score bins for hierarchy
+    df = avg_scores.copy()
+    df["Score Range"] = pd.cut(
+        df["Average Score"],
+        bins=[0, 5, 7, 8, 9, 10],
+        labels=["0-5: Low", "5-7: Medium", "7-8: Good", "8-9: Great", "9-10: Excellent"],
+        include_lowest=True,
+    )
+
+    # Create hierarchical structure
+    hierarchy_data = []
+    for _, row in df.iterrows():
+        hierarchy_data.append(
+            {
+                "labels": row["Song"][:30] + ("..." if len(row["Song"]) > 30 else ""),
+                "parents": row["Score Range"],
+                "values": 1,
+                "score": row["Average Score"],
+            }
+        )
+
+    # Add parent nodes
+    for score_range in df["Score Range"].unique():
+        if pd.notna(score_range):
+            hierarchy_data.append({"labels": score_range, "parents": "All Songs", "values": 0, "score": 0})
+
+    hierarchy_data.append({"labels": "All Songs", "parents": "", "values": 0, "score": 0})
+
+    hierarchy_df = pd.DataFrame(hierarchy_data)
+
+    fig = go.Figure(
+        go.Sunburst(
+            labels=hierarchy_df["labels"],
+            parents=hierarchy_df["parents"],
+            values=hierarchy_df["values"],
+            branchvalues="total",
+            marker=dict(
+                colorscale="RdYlGn",
+                cmid=7,
+                colorbar=dict(title="Score", thickness=15, len=0.7),
+                line=dict(color="white", width=2),
+            ),
+            hovertemplate="<b>%{label}</b><br>Score: %{customdata:.2f}<extra></extra>",
+            customdata=hierarchy_df["score"],
+        )
+    )
+
+    fig.update_layout(
+        title={
+            "text": "Hierarchical Score Distribution (Sunburst)",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+        },
+        font=dict(family="Inter", color="#2c3e50"),
+        paper_bgcolor="white",
+        height=600,
+        margin=dict(l=20, r=20, t=80, b=20),
+    )
+
+    return fig
+
+
+def make_parallel_coordinates_chart(avg_scores: pd.DataFrame, df_raw: pd.DataFrame | None) -> go.Figure:
+    """Create a parallel coordinates plot for multi-dimensional song analysis.
+
+    Shows multiple metrics simultaneously: average score, vote count, std deviation,
+    and rank in an interactive parallel coordinate system - perfect for identifying
+    patterns across multiple dimensions.
+    """
+    if avg_scores.empty or df_raw is None or df_raw.empty:
+        return go.Figure()
+
+    # Calculate additional metrics
+    song_cols = df_raw.columns[2:]
+    df_numeric = df_raw[song_cols].apply(pd.to_numeric, errors="coerce")
+
+    metrics = []
+    for col in song_cols:
+        votes = df_numeric[col].dropna()
+        if len(votes) > 0:
+            metrics.append(
+                {"Song": col, "Vote Count": len(votes), "Std Dev": votes.std(), "Min": votes.min(), "Max": votes.max()}
+            )
+
+    metrics_df = pd.DataFrame(metrics)
+    combined = pd.merge(avg_scores[["Song", "Average Score", "Rank"]], metrics_df, on="Song", how="left")
+    combined = combined.dropna()
+
+    # Take top 20 for readability
+    top_songs = combined.nsmallest(20, "Rank")
+
+    # Create color scale based on rank
+    colors = top_songs["Rank"].values
+
+    fig = go.Figure(
+        data=go.Parcoords(
+            line=dict(color=colors, colorscale="Viridis", showscale=True, cmin=1, cmax=top_songs["Rank"].max()),
+            dimensions=[
+                dict(
+                    label="Rank",
+                    values=top_songs["Rank"],
+                    range=[top_songs["Rank"].max(), 1],  # Reverse for better viz
+                ),
+                dict(
+                    label="Avg Score",
+                    values=top_songs["Average Score"],
+                    range=[top_songs["Average Score"].min() - 0.5, 10],
+                ),
+                dict(label="Vote Count", values=top_songs["Vote Count"], range=[0, top_songs["Vote Count"].max()]),
+                dict(label="Std Dev", values=top_songs["Std Dev"], range=[0, top_songs["Std Dev"].max()]),
+                dict(
+                    label="Score Range",
+                    values=top_songs["Max"] - top_songs["Min"],
+                    range=[0, (top_songs["Max"] - top_songs["Min"]).max()],
+                ),
+            ],
+        )
+    )
+
+    fig.update_layout(
+        title={
+            "text": "Multi-Dimensional Song Analysis (Top 20)",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+        },
+        font=dict(family="Inter", color="#2c3e50", size=12),
+        paper_bgcolor="white",
+        height=500,
+        margin=dict(l=100, r=100, t=80, b=60),
+    )
+
+    return fig
+
+
+def make_ridgeline_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
+    """Create a ridgeline (joyplot) showing score distributions for top songs.
+
+    Ridgeline plots are one of the most elegant ways to compare distributions,
+    popularized by data visualization experts in the 2020s.
+    """
+    if df_raw is None or df_raw.empty or avg_scores.empty:
+        return go.Figure()
+
+    # Get top 10 songs
+    top_songs = avg_scores.nsmallest(10, "Rank")["Song"].tolist()
+
+    fig = go.Figure()
+
+    # Create overlapping distributions with offset
+    colors = px.colors.sequential.Viridis
+    for idx, song in enumerate(reversed(top_songs)):  # Reverse for better stacking
+        if song in df_raw.columns:
+            votes = pd.to_numeric(df_raw[song], errors="coerce").dropna()
+            if len(votes) > 0:
+                # Create histogram data
+                hist, bin_edges = np.histogram(votes, bins=10, range=(0, 10))
+                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+                # Normalize and offset
+                hist_norm = hist / hist.max() if hist.max() > 0 else hist
+                y_offset = idx * 0.5
+
+                color_idx = int((idx / len(top_songs)) * (len(colors) - 1))
+                fig.add_trace(
+                    go.Scatter(
+                        x=bin_centers,
+                        y=hist_norm + y_offset,
+                        mode="lines",
+                        fill="tonexty",
+                        name=song[:30] + ("..." if len(song) > 30 else ""),
+                        line=dict(color=colors[color_idx], width=2),
+                        fillcolor=colors[color_idx],
+                        opacity=0.7,
+                        hovertemplate=f"<b>{song}</b><br>Score: %{{x:.1f}}<br>Frequency: %{{y:.2f}}<extra></extra>",
+                    )
+                )
+
+    fig.update_layout(
+        title={
+            "text": "Score Distribution Ridgeline (Top 10 Songs)",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+        },
+        xaxis=dict(title="Score (1-10)", showgrid=True, gridcolor="rgba(0,0,0,0.06)", range=[0, 10]),
+        yaxis=dict(title="", showticklabels=False, showgrid=False),
+        font=dict(family="Inter", color="#2c3e50"),
+        paper_bgcolor="white",
+        plot_bgcolor="#fafafa",
+        height=600,
+        margin=dict(l=50, r=50, t=80, b=60),
+        showlegend=True,
+        legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
+    )
+
+    return fig
+
+
+def make_3d_scatter_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
+    """Create an interactive 3D scatter plot of songs in score-variance-popularity space.
+
+    Modern 3D visualization with WebGL rendering for smooth interactions.
+    Each axis represents a different metric for comprehensive song analysis.
+    """
+    if df_raw is None or df_raw.empty or avg_scores.empty:
+        return go.Figure()
+
+    song_cols = df_raw.columns[2:]
+    df_numeric = df_raw[song_cols].apply(pd.to_numeric, errors="coerce")
+
+    # Calculate metrics for each song
+    metrics = []
+    for col in song_cols:
+        votes = df_numeric[col].dropna()
+        if len(votes) > 0:
+            metrics.append({"Song": col, "Vote Count": len(votes), "Std Dev": votes.std()})
+
+    metrics_df = pd.DataFrame(metrics)
+    combined = pd.merge(avg_scores[["Song", "Average Score", "Rank"]], metrics_df, on="Song", how="left")
+    combined = combined.dropna()
+
+    # Create short labels
+    combined["Label"] = combined["Song"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
+
+    fig = go.Figure(
+        data=[
+            go.Scatter3d(
+                x=combined["Average Score"],
+                y=combined["Std Dev"],
+                z=combined["Vote Count"],
+                mode="markers",
+                marker=dict(
+                    size=8,
+                    color=combined["Average Score"],
+                    colorscale="Turbo",  # Modern perceptually uniform colorscale
+                    showscale=True,
+                    colorbar=dict(title="Avg<br>Score", thickness=15, len=0.7),
+                    line=dict(color="white", width=0.5),
+                    opacity=0.8,
+                ),
+                text=combined["Song"],
+                hovertemplate="<b>%{text}</b><br>"
+                + "Avg Score: %{x:.2f}<br>"
+                + "Std Dev: %{y:.2f}<br>"
+                + "Votes: %{z}<extra></extra>",
+            )
+        ]
+    )
+
+    fig.update_layout(
+        title={
+            "text": "3D Song Analysis: Score × Variance × Popularity",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+        },
+        scene=dict(
+            xaxis=dict(title="Average Score", backgroundcolor="#fafafa", gridcolor="white"),
+            yaxis=dict(title="Standard Deviation", backgroundcolor="#fafafa", gridcolor="white"),
+            zaxis=dict(title="Vote Count", backgroundcolor="#fafafa", gridcolor="white"),
+            camera=dict(eye=dict(x=1.5, y=1.5, z=1.3)),
+        ),
+        font=dict(family="Inter", color="#2c3e50"),
+        paper_bgcolor="white",
+        height=700,
+        margin=dict(l=0, r=0, t=80, b=0),
+    )
+
+    return fig
+
+
+def make_sankey_diagram(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
+    """Create a Sankey diagram showing the flow of votes across score ranges.
+
+    Sankey diagrams are perfect for showing flow and distribution,
+    revealing how votes distribute across different score brackets.
+    """
+    if df_raw is None or df_raw.empty or avg_scores.empty:
+        return go.Figure()
+
+    # Collect all votes and categorize
+    song_cols = df_raw.columns[2:]
+    df_numeric = df_raw[song_cols].apply(pd.to_numeric, errors="coerce")
+
+    # Define score ranges
+    score_ranges = [
+        (0, 3, "Low (0-3)"),
+        (3, 5, "Below Avg (3-5)"),
+        (5, 7, "Average (5-7)"),
+        (7, 9, "Good (7-9)"),
+        (9, 11, "Excellent (9-10)"),
+    ]
+
+    # Count votes in each range for each top song
+    top_songs = avg_scores.nsmallest(10, "Rank")
+
+    # Prepare data for Sankey
+    sources = []
+    targets = []
+    values = []
+    node_labels = (
+        ["All Votes"]
+        + [song[:25] + "..." if len(song) > 25 else song for song in top_songs["Song"]]
+        + [r[2] for r in score_ranges]
+    )
+
+    # From "All Votes" to each song
+    for idx, song in enumerate(top_songs["Song"]):
+        if song in df_numeric.columns:
+            vote_count = df_numeric[song].dropna().shape[0]
+            if vote_count > 0:
+                sources.append(0)  # "All Votes"
+                targets.append(idx + 1)  # Song node
+                values.append(vote_count)
+
+    # From each song to score ranges
+    for idx, song in enumerate(top_songs["Song"]):
+        if song in df_numeric.columns:
+            votes = df_numeric[song].dropna()
+            for range_idx, (low, high, _label) in enumerate(score_ranges):
+                count = ((votes >= low) & (votes < high)).sum()
+                if count > 0:
+                    sources.append(idx + 1)  # Song node
+                    targets.append(len(top_songs) + 1 + range_idx)  # Range node
+                    values.append(count)
+
+    if not values:
+        return go.Figure()
+
+    fig = go.Figure(
+        data=[
+            go.Sankey(
+                node=dict(
+                    pad=15,
+                    thickness=20,
+                    line=dict(color="white", width=2),
+                    label=node_labels,
+                    color=[
+                        "#667eea",
+                        *["#a78bfa"] * len(top_songs),
+                        "#22c55e",
+                        "#84cc16",
+                        "#eab308",
+                        "#f97316",
+                        "#ef4444",
+                    ],
+                ),
+                link=dict(
+                    source=sources,
+                    target=targets,
+                    value=values,
+                    color="rgba(167, 139, 250, 0.3)",
+                ),
+            )
+        ]
+    )
+
+    fig.update_layout(
+        title={
+            "text": "Vote Flow: Songs → Score Ranges",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+        },
+        font=dict(family="Inter", size=12, color="#2c3e50"),
+        paper_bgcolor="white",
+        height=600,
+        margin=dict(l=20, r=20, t=80, b=20),
+    )
+
+    return fig
+
+
+def make_radial_ranking_chart(avg_scores: pd.DataFrame) -> go.Figure:
+    """Create a modern radial/circular ranking chart for top songs.
+
+    Circular layouts are visually striking and work well for rankings,
+    inspired by modern infographic designs.
+    """
+    if avg_scores.empty:
+        return go.Figure()
+
+    # Get top 15 songs
+    top_songs = avg_scores.nsmallest(15, "Rank")
+
+    # Calculate angles for radial layout
+    n = len(top_songs)
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+
+    # Convert to cartesian coordinates
+    radius = top_songs["Average Score"].values
+    x = radius * np.cos(angles)
+    y = radius * np.sin(angles)
+
+    # Create color scale based on rank
+
+    fig = go.Figure()
+
+    # Add radial lines from center
+    for i in range(n):
+        fig.add_trace(
+            go.Scatter(
+                x=[0, x[i]],
+                y=[0, y[i]],
+                mode="lines",
+                line=dict(color="rgba(100, 100, 100, 0.3)", width=1),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+
+    # Add points
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="markers+text",
+            marker=dict(
+                size=20,
+                color=top_songs["Rank"].values,
+                colorscale="Plasma",
+                showscale=True,
+                colorbar=dict(title="Rank", thickness=15, len=0.7),
+                line=dict(color="white", width=2),
+            ),
+            text=[f"#{r}" for r in top_songs["Rank"]],
+            textposition="middle center",
+            textfont=dict(color="white", size=10, family="Inter", weight="bold"),
+            hovertemplate="<b>%{customdata[0]}</b><br>Rank: #%{customdata[1]}<br>Score: %{customdata[2]:.2f}<extra></extra>",
+            customdata=np.column_stack((top_songs["Song"], top_songs["Rank"], top_songs["Average Score"])),
+            showlegend=False,
+        )
+    )
+
+    # Add labels outside
+    label_radius = radius + 0.8
+    label_x = label_radius * np.cos(angles)
+    label_y = label_radius * np.sin(angles)
+
+    for i, song in enumerate(top_songs["Song"]):
+        short_name = song[:20] + "..." if len(song) > 20 else song
+        fig.add_annotation(
+            x=label_x[i],
+            y=label_y[i],
+            text=short_name,
+            showarrow=False,
+            font=dict(size=9, family="Inter"),
+            textangle=np.degrees(angles[i]) if abs(np.degrees(angles[i])) < 90 else np.degrees(angles[i]) + 180,
+        )
+
+    # Add score circles
+    for score in [2, 4, 6, 8, 10]:
+        circle_angles = np.linspace(0, 2 * np.pi, 100)
+        circle_x = score * np.cos(circle_angles)
+        circle_y = score * np.sin(circle_angles)
+        fig.add_trace(
+            go.Scatter(
+                x=circle_x,
+                y=circle_y,
+                mode="lines",
+                line=dict(color="rgba(200, 200, 200, 0.3)", width=1, dash="dot"),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+
+    fig.update_layout(
+        title={
+            "text": "Radial Ranking Chart (Top 15)",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 24, "color": "#1a1a1a", "family": "Inter"},
+        },
+        xaxis=dict(
+            showgrid=False, showticklabels=False, zeroline=False, range=[-12, 12], scaleanchor="y", scaleratio=1
+        ),
+        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=[-12, 12]),
+        font=dict(family="Inter", color="#2c3e50"),
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        height=700,
+        margin=dict(l=100, r=100, t=80, b=100),
+    )
+
+    return fig

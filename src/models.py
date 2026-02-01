@@ -42,6 +42,14 @@ class DashboardData:
     # Clustering
     taste_map_plot: go.Figure = None
 
+    # State-of-the-art 2026 visualizations
+    sunburst_plot: go.Figure = None
+    parallel_coords_plot: go.Figure = None
+    ridgeline_plot: go.Figure = None
+    scatter_3d_plot: go.Figure = None
+    sankey_plot: go.Figure = None
+    radial_plot: go.Figure = None
+
     # Recommendations
     recommendations_display: str = ""
 
@@ -77,4 +85,11 @@ class DashboardData:
             self.rating_pattern_plot or go.Figure(),
             self.taste_map_plot or go.Figure(),
             self.recommendations_display,
+            # New 2026 visualizations
+            self.sunburst_plot or go.Figure(),
+            self.parallel_coords_plot or go.Figure(),
+            self.ridgeline_plot or go.Figure(),
+            self.scatter_3d_plot or go.Figure(),
+            self.sankey_plot or go.Figure(),
+            self.radial_plot or go.Figure(),
         )
