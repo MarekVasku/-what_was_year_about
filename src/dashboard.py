@@ -107,13 +107,6 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
             sankey_plot=empty_fig,
             radial_plot=empty_fig,
         )
-            heatmap_plot=empty_fig,
-            controversy_plot=empty_fig,
-            agreeable_plot=empty_fig,
-            rating_pattern_plot=empty_fig,
-            taste_map_plot=empty_fig,
-            recommendations_display="",
-        )
 
     # --- Overview respecting ties and listing all tied songs ---
     top1 = avg_scores[avg_scores["Rank"] == 1]
@@ -239,7 +232,9 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         comparison_display = pd.DataFrame()
         # If user provided an email but no votes found, show message
         if user_email_prefix:
-            recommendations_display = f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
+            recommendations_display = (
+                f"⚠️ **No votes found for `{user_email_prefix}`**\n\nPlease check your email prefix (the part before @)."
+            )
 
     return DashboardData(
         overview=overview,
@@ -268,10 +263,6 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         scatter_3d_plot=scatter_3d_chart,
         sankey_plot=sankey_chart,
         radial_plot=radial_chart,
-    )
-        rating_pattern_plot=rating_pattern_chart,
-        taste_map_plot=taste_map_chart,
-        recommendations_display=recommendations_display,
     )
 
 

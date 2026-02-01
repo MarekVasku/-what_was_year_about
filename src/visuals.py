@@ -1088,7 +1088,7 @@ def make_voter_clustering_chart(voter_clusters_df: pd.DataFrame | None) -> go.Fi
 
 def make_sunburst_chart(avg_scores: pd.DataFrame) -> go.Figure:
     """Create a sunburst chart showing song hierarchy by score ranges.
-    
+
     This modern hierarchical visualization uses concentric rings to show
     score distribution patterns in an intuitive, space-efficient way.
     """
@@ -1160,7 +1160,7 @@ def make_sunburst_chart(avg_scores: pd.DataFrame) -> go.Figure:
 
 def make_parallel_coordinates_chart(avg_scores: pd.DataFrame, df_raw: pd.DataFrame | None) -> go.Figure:
     """Create a parallel coordinates plot for multi-dimensional song analysis.
-    
+
     Shows multiple metrics simultaneously: average score, vote count, std deviation,
     and rank in an interactive parallel coordinate system - perfect for identifying
     patterns across multiple dimensions.
@@ -1195,7 +1195,9 @@ def make_parallel_coordinates_chart(avg_scores: pd.DataFrame, df_raw: pd.DataFra
             line=dict(color=colors, colorscale="Viridis", showscale=True, cmin=1, cmax=top_songs["Rank"].max()),
             dimensions=[
                 dict(
-                    label="Rank", values=top_songs["Rank"], range=[top_songs["Rank"].max(), 1]  # Reverse for better viz
+                    label="Rank",
+                    values=top_songs["Rank"],
+                    range=[top_songs["Rank"].max(), 1],  # Reverse for better viz
                 ),
                 dict(
                     label="Avg Score",
@@ -1231,7 +1233,7 @@ def make_parallel_coordinates_chart(avg_scores: pd.DataFrame, df_raw: pd.DataFra
 
 def make_ridgeline_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
     """Create a ridgeline (joyplot) showing score distributions for top songs.
-    
+
     Ridgeline plots are one of the most elegant ways to compare distributions,
     popularized by data visualization experts in the 2020s.
     """
@@ -1295,7 +1297,7 @@ def make_ridgeline_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) 
 
 def make_3d_scatter_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
     """Create an interactive 3D scatter plot of songs in score-variance-popularity space.
-    
+
     Modern 3D visualization with WebGL rendering for smooth interactions.
     Each axis represents a different metric for comprehensive song analysis.
     """
@@ -1368,7 +1370,7 @@ def make_3d_scatter_chart(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame)
 
 def make_sankey_diagram(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -> go.Figure:
     """Create a Sankey diagram showing the flow of votes across score ranges.
-    
+
     Sankey diagrams are perfect for showing flow and distribution,
     revealing how votes distribute across different score brackets.
     """
@@ -1414,7 +1416,7 @@ def make_sankey_diagram(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -
     for idx, song in enumerate(top_songs["Song"]):
         if song in df_numeric.columns:
             votes = df_numeric[song].dropna()
-            for range_idx, (low, high, label) in enumerate(score_ranges):
+            for range_idx, (low, high, _label) in enumerate(score_ranges):
                 count = ((votes >= low) & (votes < high)).sum()
                 if count > 0:
                     sources.append(idx + 1)  # Song node
@@ -1470,7 +1472,7 @@ def make_sankey_diagram(df_raw: pd.DataFrame | None, avg_scores: pd.DataFrame) -
 
 def make_radial_ranking_chart(avg_scores: pd.DataFrame) -> go.Figure:
     """Create a modern radial/circular ranking chart for top songs.
-    
+
     Circular layouts are visually striking and work well for rankings,
     inspired by modern infographic designs.
     """
@@ -1490,7 +1492,6 @@ def make_radial_ranking_chart(avg_scores: pd.DataFrame) -> go.Figure:
     y = radius * np.sin(angles)
 
     # Create color scale based on rank
-    colors = px.colors.sequential.Plasma
 
     fig = go.Figure()
 
