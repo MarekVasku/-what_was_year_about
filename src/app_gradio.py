@@ -188,6 +188,57 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
     )
     taste_map_plot = gr.Plot()
 
+    # ========== STATE-OF-THE-ART 2026 VISUALIZATIONS ==========
+    gr.Markdown("## 🎨 Advanced 2026 Visualizations")
+    gr.Markdown(
+        "_Cutting-edge data visualization techniques using the latest methods from 2026. "
+        "Explore your music data in entirely new ways._"
+    )
+
+    gr.Markdown("### Sunburst Chart: Hierarchical Score Distribution")
+    gr.Markdown(
+        "_Modern circular hierarchy showing how songs distribute across score ranges. "
+        "Click segments to zoom in and explore different score brackets._"
+    )
+    sunburst_plot = gr.Plot()
+
+    gr.Markdown("### 3D Interactive Scatter: Score × Variance × Popularity")
+    gr.Markdown(
+        "_Explore songs in three-dimensional space with WebGL-powered smooth interactions. "
+        "Each axis tells a different story: average score, vote variance, and popularity._"
+    )
+    scatter_3d_plot = gr.Plot()
+
+    gr.Markdown("### Ridgeline Distribution: Top Songs Comparison")
+    gr.Markdown(
+        "_Elegant overlapping distributions (also known as joy plots) showing how votes "
+        "distribute for top songs. Popularized by data visualization experts in the 2020s._"
+    )
+    ridgeline_plot = gr.Plot()
+
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("### Radial Ranking Chart")
+            gr.Markdown(
+                "_Circular layout inspired by modern infographic design. "
+                "Rankings visualized in a visually striking radial pattern._"
+            )
+            radial_plot = gr.Plot()
+        with gr.Column(scale=1):
+            gr.Markdown("### Sankey Flow Diagram")
+            gr.Markdown(
+                "_Flow visualization showing how votes distribute from songs to score ranges. "
+                "Perfect for understanding voting patterns at a glance._"
+            )
+            sankey_plot = gr.Plot()
+
+    gr.Markdown("### Parallel Coordinates: Multi-Dimensional Analysis")
+    gr.Markdown(
+        "_State-of-the-art technique for comparing multiple metrics simultaneously. "
+        "Draw patterns across rank, score, vote count, standard deviation, and score range._"
+    )
+    parallel_coords_plot = gr.Plot()
+
     gr.Markdown("## Your Music Taste Recommendations")
     warning_recommendations = gr.Markdown(
         "<p style='color: #9333ea; font-size: 16px; font-weight: 600;'>⚠️ To see your personalized insights, enter your email address above.</p>"
@@ -249,6 +300,14 @@ with gr.Blocks(title="What was the year about - music chart", theme=THEME, css=C
         rating_pattern_plot,
         taste_map_plot,
         recommendations_box,
+        # 2026 visualizations
+        sunburst_plot,
+        parallel_coords_plot,
+        ridgeline_plot,
+        scatter_3d_plot,
+        sankey_plot,
+        radial_plot,
+        # Warnings
         warning_personal,
         warning_rating,
         warning_recommendations,

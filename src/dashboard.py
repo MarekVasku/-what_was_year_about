@@ -12,6 +12,7 @@ from llm_implementation import (
 from models import DashboardData
 from visuals import (
     make_2d_taste_map_chart,
+    make_3d_scatter_chart,
     make_all_votes_distribution,
     make_biggest_disagreements_chart,
     make_controversy_chart,
@@ -19,7 +20,12 @@ from visuals import (
     make_main_chart,
     make_main_chart_user_only,
     make_most_agreeable_chart,
+    make_parallel_coordinates_chart,
     make_podium_chart,
+    make_radial_ranking_chart,
+    make_ridgeline_chart,
+    make_sankey_diagram,
+    make_sunburst_chart,
     make_top_10_spotlight,
     make_user_rating_pattern,
     make_user_vs_community_top10,
@@ -62,6 +68,13 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
             rating_pattern_plot=empty_fig,
             taste_map_plot=empty_fig,
             recommendations_display="",
+            # 2026 visualizations
+            sunburst_plot=empty_fig,
+            parallel_coords_plot=empty_fig,
+            ridgeline_plot=empty_fig,
+            scatter_3d_plot=empty_fig,
+            sankey_plot=empty_fig,
+            radial_plot=empty_fig,
         )
 
     if avg_scores.empty:
@@ -80,6 +93,20 @@ def create_dashboard(user_email_prefix: str = "", ranking_view: str = "overlay",
             user_comparison_table=pd.DataFrame(),
             disagreements_plot=empty_fig,
             user_vs_top10_plot=empty_fig,
+            heatmap_plot=empty_fig,
+            controversy_plot=empty_fig,
+            agreeable_plot=empty_fig,
+            rating_pattern_plot=empty_fig,
+            taste_map_plot=empty_fig,
+            recommendations_display="",
+            # 2026 visualizations
+            sunburst_plot=empty_fig,
+            parallel_coords_plot=empty_fig,
+            ridgeline_plot=empty_fig,
+            scatter_3d_plot=empty_fig,
+            sankey_plot=empty_fig,
+            radial_plot=empty_fig,
+        )
             heatmap_plot=empty_fig,
             controversy_plot=empty_fig,
             agreeable_plot=empty_fig,
@@ -158,6 +185,14 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
     # Clustering visualizations
     taste_map_chart = make_2d_taste_map_chart(create_2d_taste_map(df_raw, user_email_prefix))
 
+    # State-of-the-art 2026 visualizations
+    sunburst_chart = make_sunburst_chart(avg_scores)
+    parallel_coords_chart = make_parallel_coordinates_chart(avg_scores, df_raw)
+    ridgeline_chart = make_ridgeline_chart(df_raw, avg_scores)
+    scatter_3d_chart = make_3d_scatter_chart(df_raw, avg_scores)
+    sankey_chart = make_sankey_diagram(df_raw, avg_scores)
+    radial_chart = make_radial_ranking_chart(avg_scores)
+
     # User comparison section and LLM insight
     recommendations_display = ""
 
@@ -223,6 +258,17 @@ Stats: {total_votes} votes  •  {total_songs} songs  •  Average: {avg_of_avgs
         heatmap_plot=heatmap_chart,
         controversy_plot=controversy_chart,
         agreeable_plot=agreeable_chart,
+        rating_pattern_plot=rating_pattern_chart,
+        taste_map_plot=taste_map_chart,
+        recommendations_display=recommendations_display,
+        # 2026 visualizations
+        sunburst_plot=sunburst_chart,
+        parallel_coords_plot=parallel_coords_chart,
+        ridgeline_plot=ridgeline_chart,
+        scatter_3d_plot=scatter_3d_chart,
+        sankey_plot=sankey_chart,
+        radial_plot=radial_chart,
+    )
         rating_pattern_plot=rating_pattern_chart,
         taste_map_plot=taste_map_chart,
         recommendations_display=recommendations_display,
